@@ -12,9 +12,9 @@ from scipy.special import factorial
 import copy
 import pyfftw
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
-from perturbative_wavepackets import WavepacketBuilder
+from core import UF2
 
-class TransientAbsorption5thOrder(WavepacketBuilder):
+class TransientAbsorption5thOrder(UF2):
     """This class uses WavepacketBuilder to calculate the perturbative 
 wavepackets needed to calculate the frequency-resolved pump-probe spectrum """
     

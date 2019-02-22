@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
 
-from perturbative_wavepackets import WavepacketBuilder
 from TA_example import TransientAbsorption
 
 """The following definitions of I4_mat and kdelvec are based
