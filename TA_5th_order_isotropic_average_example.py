@@ -1,7 +1,9 @@
+#Dependencies
 import numpy as np
 import matplotlib.pyplot as plt
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
 
+#5th order contribution to TA signal, implemented using UF2
 from TA_5th_order_example import TransientAbsorption5thOrder
 
 """The following definitions of I6_mat and kdelvec are based

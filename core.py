@@ -1,15 +1,11 @@
 #Standard python libraries
-import numpy as np
 import os
-import yaml
 import warnings
-import itertools
-import matplotlib.pyplot as plt
-from ipywidgets import interact, widgets
-from scipy.sparse import kron
-from numpy.polynomial.hermite import hermval
-from scipy.special import factorial
 import copy
+
+#Dependencies - numpy, scipy, matplotlib, pyfftw
+import numpy as np
+import matplotlib.pyplot as plt
 import pyfftw
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
 
@@ -205,7 +201,7 @@ There must be one or two files, one describing the overlap between the ground an
 singly-excited manifold, and one describing the dipole overlap between the 
 singly-excited and doubly-excited manifold (optional)"""
         file_name = os.path.join(self.base_path,'mu_GSM_to_SEM_cartesian.npy')
-        file_name_bool = os.path.join(self.base_path,'GSM_to_SEM_boolean_overlaps.npy')
+        file_name_bool = os.path.join(self.base_path,'mu_GSM_to_SEM_boolean.npy')
         self.mu_GSM_to_SEM = np.load(file_name)
         try:
             self.mu_GSM_to_SEM_boolean = np.load(file_name_bool)

@@ -1,17 +1,13 @@
 #Standard python libraries
-import numpy as np
-import os
-import yaml
-import warnings
-import itertools
-import matplotlib.pyplot as plt
-from ipywidgets import interact, widgets
-from scipy.sparse import kron
-from numpy.polynomial.hermite import hermval
-from scipy.special import factorial
 import copy
-import pyfftw
+
+#Dependencies
+import numpy as np
+import warnings
+import matplotlib.pyplot as plt
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
+
+#UF2
 from core import UF2
 
 class TransientAbsorption(UF2):
@@ -298,9 +294,3 @@ field has changed since the previous calculation. Otherwise they can be re-used.
             plt.xlim(wT_frequency_range)
         if save_fig:
             plt.savefig(self.base_path + 'TA_spectra_fft')
-
-class TransientAbsorptionGSB(TransientAbsorption):
-
-    def calculate_normal_signals(self):
-        tot_sig = self.GSB1() + self.GSB2()
-        return tot_sig

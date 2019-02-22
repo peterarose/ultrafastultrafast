@@ -1,22 +1,23 @@
 #Standard python libraries
-import numpy as np
-import os
-import yaml
-import warnings
-import itertools
-import matplotlib.pyplot as plt
-from ipywidgets import interact, widgets
-from scipy.sparse import kron
-from numpy.polynomial.hermite import hermval
-from scipy.special import factorial
 import copy
-import pyfftw
+import warnings
+
+#Dependencies
+import numpy as np
+import matplotlib.pyplot as plt
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
+
+#UF2
 from core import UF2
 
 class TransientAbsorption5thOrder(UF2):
-    """This class uses WavepacketBuilder to calculate the perturbative 
-wavepackets needed to calculate the frequency-resolved pump-probe spectrum """
+    """This class uses UF2 to calculate the perturbative wavepackets needed 
+to calculate one of the 5th order contributions to the transient absorption
+signal. This is the signal proportional to pump^4*probe^2.  A separate
+class would be needed to calculate the contribution due to pump^2*probe^4.
+Note that this implementation is only valid for systems that have at most
+2 electronic excitations.  If 3 electronic excitations are possible, more
+diagrams must be considered than are currently included."""
     
     def __init__(self,parameter_file_path,*, num_conv_points=138, initial_state=0,
                  dt=0.1,total_num_time_points = 3686):

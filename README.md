@@ -1,2 +1,58 @@
-# ultrafastultrafast (UF^2)
+# ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
+
+# Dependencies
+numpy
+matplotlib
+pyfftw
+
+# How to Use
+See the Jupyter notebook Example.ipynb for examples of how to use
+this code to generate perturbative wavepackets, and from there
+the desired nonlinear spectroscopic signal
+
+The folder monomder_d0.4 includes the necessary files to simulate
+a two-level system coupled to a single harmonic mode of Huang-Rhys
+factor 0.4^2/2 = 0.08.
+
+# Simulating with your own system
+
+To use UF2 to calculate spectra for other systems, you must create a
+folder for the system.  You can use the Jupyter notebook Examples.ipynb
+to calcualte the transient absorption signal for your system by simply
+changing the file_path variable and running the notebook.  You can also
+use the example included in Examples.ipynb, and the example of the code
+in TA_example.py, to calculate any n-wave mixing process.
+The folder describing the system parameters must have the following two files:
+
+eigenvalues.npz - a numpy archive with the following keys:
+'GSM': containing all eigenvalues in the ground state manifold
+'SEM': containing all eigenvalues in the singly excited manifold
+'DEM' (optional): containing all eigenvalues in the doubly excited manifold
+
+mu_GSM_to_SEM_cartesian.npy - a numpy array of dipole matrix elements
+the array must have three indices [i,j,k]
+i - index of the singly excited eigenstate
+j - index of the ground eigenstate
+k - cartesian coordinate (x,y,z)
+
+Optional files
+mu_SEM_to_DEM_cartesian.npy - a numpy array of dipole matrix elements
+the array must have three indices [i,j,k]
+i - index of the doubly excited eigenstate
+j - index of the singly excited eigenstate
+k - cartesian coordinate (x,y,z)
+
+GSM_to_SEM_boolean_overlaps.npy - a boolean numpy array
+the array must have two indices [i,j]
+i - index of the singly excited eigenstate
+j - index of the ground eigenstate
+Each entry specifies whether or not the corresponding dipole matrix element
+contributes to the calculations (1 if yes, 0 if no)
+
+SEM_to_DEM_boolean_overlaps.npy - a boolean numpy array
+the array must have two indices [i,j]
+i - index of the doubly excited eigenstate
+j - index of the singly eigenstate
+Each entry specifies whether or not the corresponding dipole matrix element
+contributes to the calculations (1 if yes, 0 if no)
