@@ -20,9 +20,11 @@ factor 0.4^2/2 = 0.08.
 To use UF2 to calculate spectra for other systems, you must create a
 folder for the system.  You can use the Jupyter notebook Examples.ipynb
 to calcualte the transient absorption signal for your system by simply
-changing the file_path variable and running the notebook.  You can also
-use the example included in Examples.ipynb, and the example of the code
-in TA_example.py, to calculate any n-wave mixing process.
+changing the file_path variable to specify the folder you created,and running
+the notebook.  You can also use the class core.UF2 to write your own code to
+calculate any n-wave mixing process.  See TA_example.py for a 4-wave mixing
+example, and TA_5th_order_example.py for a 6-wave mixing example.
+
 The folder describing the system parameters must have the following two files:
 
 eigenvalues.npz - a numpy archive with the following keys:
@@ -36,7 +38,7 @@ i - index of the singly excited eigenstate
 j - index of the ground eigenstate
 k - cartesian coordinate (x,y,z)
 
-Optional files
+Optional files:
 mu_SEM_to_DEM_cartesian.npy - a numpy array of dipole matrix elements
 the array must have three indices [i,j,k]
 i - index of the doubly excited eigenstate
