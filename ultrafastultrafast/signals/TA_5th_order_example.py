@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
 
 #UF2
-from core import UF2
+from ultrafastultrafast import Wavepackets
 
-class TransientAbsorption5thOrder(UF2):
+class TransientAbsorption5thOrder(Wavepackets):
     """This class uses UF2 to calculate the perturbative wavepackets needed 
 to calculate one of the 5th order contributions to the transient absorption
 signal. This is the signal proportional to pump^4*probe^2.  A separate
@@ -66,15 +66,18 @@ probe_field must be evaluated on efield_t time grid
 
         if plot_fields:
             fig, axes = plt.subplots(2,2)
-            axes[0,0].plot(self.efield_t,np.real(pump_field))
-            axes[0,1].plot(self.efield_w,np.real(pump_fft))
-            axes[1,0].plot(self.efield_t,np.real(probe_field))
-            axes[1,1].plot(self.efield_w,np.real(probe_fft))
+            l1,l2, = axes[0,0].plot(self.efield_t,np.real(pump_field),self.efield_t,np.imag(pump_field))
+            plt.legend([l1,l2],['Real','Imag'])
+            axes[0,1].plot(self.efield_w,np.real(pump_fft),self.efield_w,np.imag(pump_fft))
+            axes[1,0].plot(self.efield_t,np.real(probe_field),self.efield_t,np.imag(probe_field))
+            axes[1,1].plot(self.efield_w,np.real(probe_fft),self.efield_w,np.imag(probe_fft))
 
-            axes[0,0].set_ylabel('Real Pump Amp')
-            axes[1,0].set_ylabel('Real Probe Amp')
+            axes[0,0].set_ylabel('Pump Amp')
+            axes[1,0].set_ylabel('Probe Amp')
             axes[1,0].set_xlabel('Time')
             axes[1,1].set_xlabel('Frequency')
+
+            fig.suptitle('Check that pump and probe are well-resolved in time and frequency')
 
     def calculate_pump_wavepackets(self):
         """Calculates the wavepackets that involve only the pump, and therefore

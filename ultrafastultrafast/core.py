@@ -10,11 +10,13 @@ import pyfftw
 from pyfftw.interfaces.numpy_fft import fft, fftshift, ifft, ifftshift, fftfreq
 
 class HeavisideConvolve:
-    """This class calculates the discrete convolution of an array with the heaviside step function
+    """This class calculates the discrete convolution of an array with the 
+        heaviside step function
 
     Attributes:
         size (int) : number of linear convolution points
-        theta_fft (numpy.ndarray) : discrete fourier transform of the step function
+        theta_fft (numpy.ndarray) : discrete fourier transform of the step 
+            function
         a : aligned array of zeros for use with the fftw algorithm
         b : empty aligned array for use with the fftw algorithm
         c : empty aligned array for use with the fftw algorithm
@@ -25,11 +27,13 @@ class HeavisideConvolve:
     def __init__(self,arr_size):
         """
         Args:
-            arr_size (int): number of points desired for the linear convolution"""
+            arr_size (int) : number of points desired for the linear 
+                convolution
+"""
         self.size = arr_size
         self.theta_fft = self.heaviside_fft()
-        # The discrete convolution is inherently circular. Therefore we perform the
-        # convolution using 2N-1 points
+        # The discrete convolution is inherently circular. Therefore we
+        # perform the convolution using 2N-1 points
         self.a = pyfftw.empty_aligned(2*self.size - 1, dtype='complex128', n=16)
         self.b = pyfftw.empty_aligned(2*self.size - 1, dtype='complex128', n=16)
         self.c = pyfftw.empty_aligned(2*self.size - 1, dtype='complex128', n=16)
@@ -43,7 +47,8 @@ class HeavisideConvolve:
         """This method calculates the FFT of the heaviside step function
         
         Args:
-            value_at_zero (float): value of the heaviside step function at x = 0
+            value_at_zero (float): value of the heaviside step function at 
+                x = 0
 
         Returns:
             numpy.ndarray: the FFT of the heaviside step function
@@ -56,14 +61,16 @@ class HeavisideConvolve:
         return fft(y)
 
     def fft_convolve(self,arr,*,d=1):
-        """This method calculates the linear convolution of an input with the heaviside step function
+        """This method calculates the linear convolution of an input with 
+            the heaviside step function
         
         Args:
             arr (numpy.ndarray): 1d array of input function values f(x)
             d (float): spacing size of grid f(x) is evaluated on, dx
 
         Returns:
-            numpy.ndarray: linear convolution of arr with heaviside step function
+            numpy.ndarray: linear convolution of arr with heaviside step 
+                function
 """
         self.a[:arr.size] = arr
 
@@ -78,33 +85,44 @@ class HeavisideConvolve:
         return self.c[-arr.size:] * d
 
     def fft_convolve2(self,arr,*,d=1):
-        """This method loops over fft_convolve in order to perform the convolution
-of input array with the heaviside step function along the second axis of arr
+        """This method loops over fft_convolve in order to perform the convolution of input array with the heaviside step function along the second axis of arr
 
         Args:
-            arr (numpy.ndarray): 2d array of input function values f_i(x), where i is the 1st index of the array
+            arr (numpy.ndarray): 2d array of input function values f_i(x), 
+                where i is the 1st index of the array
             d (float): spacing size of grid f_i(x) is evaluated on, dx
 
         Returns:
-            numpy.ndarray: 2d array of linear convolution of arr with heaviside step function along the second axis of arr
+            numpy.ndarray: 2d array of linear convolution of arr with 
+                heaviside step function along the second axis of arr
 """
         size0,size1 = arr.shape
         for i in range(size0):
             arr[i,:] = self.fft_convolve(arr[i,:],d=d)
         return arr
 
-class UF2(HeavisideConvolve):
+class Wavepackets(HeavisideConvolve):
     """This class is designed to calculate perturbative wavepackets in the
 light-matter interaction given the eigenvalues of the unperturbed 
 hamiltonian and the material dipole operator evaluated in the
 eigenbasis of the unperturbed hamiltonian.
 
-    Attributes:
+    Args:
+        file_path (string): path to folder containing eigenvalues and the
+            dipole operator for the system Hamiltonian
+        num_conv_points (int): number of desired points for linear 
+            convolution. Also number of points used to resolve all optical
+            pulse shapes
+        dt (float): time spacing used to resolve the shape of all optical
+            pulses
+        initial_state (int): index of initial state for psi^0
+        total_num_time_poitns (int): total number of time points used for
+            the spectroscopic calculations.
 
 """
-    def __init__(self,parameter_file_path,*, num_conv_points=138, dt=0.1,
+    def __init__(self,file_path,*, num_conv_points=138, dt=0.1,
                  initial_state=0, total_num_time_points = 2000):
-        self.base_path = parameter_file_path
+        self.base_path = file_path
 
         self.set_homogeneous_linewidth(0.05)
 
@@ -145,9 +163,9 @@ eigenbasis of the unperturbed hamiltonian.
 
     def set_psi0(self,initial_state):
         """Creates the unperturbed wavefunction. This code does not 
-support initial states that are coherent super-positions of eigenstates.
-To perform thermal averaging, recalculate spectra for each initial
-state that contributes to the thermal ensemble.
+            support initial states that are coherent super-positions of 
+            eigenstates. To perform thermal averaging, recalculate spectra 
+            for each initial state that contributes to the thermal ensemble.
         Args:
             initial_state (int): index for initial eigenstate in GSM
 """
@@ -160,9 +178,10 @@ state that contributes to the thermal ensemble.
         self.psi0 = psi0_dict
 
     def set_U0(self):
-        """Calculates and stores the time-evolution operator for the unperturbed hamiltonian.
-Time evolution is handled separately in each manifold, so the time-evolution operator is
-stored as a list, called self.unitary.
+        """Calculates and stores the time-evolution operator for the 
+            unperturbed hamiltonian.
+            Time evolution is handled separately in each manifold, so the 
+            time-evolution operator is stored as a list, called self.unitary.
 """
         self.unitary = []
         for i in range(len(self.eigenvalues)):
@@ -173,7 +192,7 @@ stored as a list, called self.unitary.
         self.gamma = gamma
 
     def get_closest_index_and_value(self,value,array):
-        """Given an array and a desired value, finds the closest actual value 
+        """Given an array and a desired value, finds the closest actual value
 stored in that array, and returns that value, along with its corresponding 
 array index
 """
@@ -195,26 +214,32 @@ energy singly-excited state should be set to 0
 
     def load_mu(self):
         """Load the precalculated dipole overlaps.  The dipole operator must
-be stored as a .npy file, and must contain a single array, with three indices:
-(upper manifold eigenfunction, lower manifold eigenfunction, cartesian coordinate).
-There must be one or two files, one describing the overlap between the ground and 
-singly-excited manifold, and one describing the dipole overlap between the 
-singly-excited and doubly-excited manifold (optional)"""
-        file_name = os.path.join(self.base_path,'mu_GSM_to_SEM_cartesian.npy')
-        file_name_bool = os.path.join(self.base_path,'mu_GSM_to_SEM_boolean.npy')
-        self.mu_GSM_to_SEM = np.load(file_name)
+be stored as a .npz file, and must contain a single array, with three 
+indices: (upper manifold eigenfunction, lower manifold eigenfunction, 
+cartesian coordinate).  There must be one or two files, one describing the 
+overlap between the ground and singly-excited manifold, and one describing 
+the dipole overlap between the singly-excited and doubly-excited manifold 
+(optional)"""
+        file_name = os.path.join(self.base_path,'mu.npz')
+        file_name_pruned = os.path.join(self.base_path,'mu_pruned.npz')
+        file_name_bool = os.path.join(self.base_path,'mu_boolean.npz')
         try:
-            self.mu_GSM_to_SEM_boolean = np.load(file_name_bool)
+            mu_archive = np.load(file_name_pruned)
+            mu_boolean_archive = np.load(file_name_bool)
+            self.mu_GSM_to_SEM_boolean = mu_boolean_archive['GSM_to_SEM']
+            pruned = True
         except FileNotFoundError:
+            mu_archive = np.load(file_name)
+            pruned = False
+        self.mu_GSM_to_SEM = mu_archive['GSM_to_SEM']
+        if pruned == False:
             self.mu_GSM_to_SEM_boolean = np.ones(self.mu_GSM_to_SEM.shape[:2],dtype='bool')
 
         if 'DEM' in self.manifolds:
-            file_name = os.path.join(self.base_path,'mu_SEM_to_DEM_cartesian.npy')
-            file_name_bool = os.path.join(self.base_path,'SEM_to_DEM_boolean_overlaps.npy')
-            self.mu_SEM_to_DEM = np.load(file_name)
-            try:
-                self.mu_SEM_to_DEM_boolean = np.load(file_name_bool)
-            except FileNotFoundError:
+            self.mu_SEM_to_DEM = mu_archive['SEM_to_DEM']
+            if pruned == True:
+                self.mu_SEM_to_DEM_boolean = mu_boolean_archive['SEM_to_DEM']
+            else:
                 self.mu_SEM_to_DEM_boolean = np.ones(self.mu_SEM_to_DEM.shape[:2],dtype='bool')
 
     def recenter(self,new_center = 0):
@@ -355,14 +380,19 @@ a 1D numpy boolean array, it is used as the mask for next manifold."""
     def next_order(self,psi_in_dict,manifold_change,
                    *,gamma=0,new_manifold_mask = None,
                    pulse_number = 0):
-        """This function connects psi^(n) to psi^(n+1) using a DFT convolution algorithm.
-psi_in_dict is the input wavefunction dictionary
-manifold_change is either +/-1 (up or down)
-pulse_time is the arrival time of the pulse
-gamma is the optical dephasing (only use with final interaction)
-new_manifold_mask is optional - define the states to be considered in the next manifold
-pulse_number - 0,1,2,... (for pump-probe experiments, either 0 (pump) or 1 (probe))
-               can also be set to 'impulsive'
+        """This function connects psi_p to psi+pj^(*) using a DFT convolution algorithm.
+
+        Args:
+            psi_in_dict (dict): input wavefunction dictionary
+            manifold_change (int): is either +/-1 (up or down)
+            pulse_number (int): index of optical pulse (0,1,2,...) can also be set to
+                'impulsive'
+            gamma (float): optical dephasing (only use with final interaction)
+            new_manifold_mask (np.ndarray): optional - define the states to be considered 
+                in the next manifold
+        
+        Return:
+            psi_dict (dict): next-order wavefunction
 """
         pulse_time = self.pulse_times[pulse_number]
         pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
@@ -417,20 +447,40 @@ pulse_number - 0,1,2,... (for pump-probe experiments, either 0 (pump) or 1 (prob
         return psi_dict
             
     def up(self,psi_in_dict,*,gamma=0,new_manifold_mask = None,pulse_number = 0):
-        """This method connects psi^(n) to psi^(n+1) where the next order psi
-        is one manifold above the current manifold.
-        The only difference between the up and down operators is whether the 
-        next manifold is 1 above, or 1 below, the starting manifold. """
+        """This method connects psi_p to psi_pj where the next order psi
+            is one manifold above the current manifold.
+
+        Args:
+            psi_in_dict (dict): input wavefunction dictionary
+            pulse_number (int): index of optical pulse (0,1,2,...) can also be set to
+                'impulsive'
+            gamma (float): optical dephasing (only use with final interaction)
+            new_manifold_mask (np.ndarray): optional - define the states to be considered 
+                in the next manifold
+
+        Returns:
+            output from method next_order
+"""
 
         return self.next_order(psi_in_dict,1,gamma=gamma,
                                new_manifold_mask = new_manifold_mask,
                                pulse_number = pulse_number)
 
     def down(self,psi_in_dict,*,gamma=0,new_manifold_mask = None,pulse_number = 0):
-        """This method connects psi^(n) to psi^(n+1) where the next order psi
-        is one manifold below the current manifold.
-        The only difference between the up and down operators is whether the 
-        next manifold is 1 above, or 1 below, the starting manifold. """
+        """This method connects psi_p to psi_pj^* where the next order psi
+            is one manifold below the current manifold.
+
+        Args:
+            psi_in_dict (dict): input wavefunction dictionary
+            pulse_number (int): index of optical pulse (0,1,2,...) can also be set to
+                'impulsive'
+            gamma (float): optical dephasing (only use with final interaction)
+            new_manifold_mask (np.ndarray): optional - define the states to be considered 
+                in the next manifold
+
+        Returns:
+            output from method next_order
+"""
 
         return self.next_order(psi_in_dict,-1,gamma=gamma,
                                new_manifold_mask = new_manifold_mask,
@@ -478,8 +528,8 @@ the dot product of the final electric field polarization vector."""
         return psi_dict
 
     def dipole_expectation(self,bra_dict_original,ket_dict_original,*,pulse_number = -1):
-        """Given two wavefunctions, this computes the expectation value of the two with respect 
-to the dipole operator.  Both wavefunctions are taken to be kets, and the one named 'bra' is
+        """Computes the expectation value of the two wavefunctions with respect 
+            to the dipole operator.  Both wavefunctions are taken to be kets, and the one named 'bra' is
 converted to a bra by taking the complex conjugate."""
         pulse_time = self.pulse_times[pulse_number]
         pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))

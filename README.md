@@ -1,17 +1,26 @@
 # ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
 
+# How to install
+In this directory, run either  
+python setup.py install  
+or
+pip install .
+
+Once installed, you should be able to use  
+import ultrafastultrafast as uf2  
+
 # Dependencies
 numpy  
 matplotlib  
 pyfftw  
 
 # How to Use
-See the Jupyter notebook Example.ipynb for examples of how to use
+See the Jupyter notebook docs/Example.ipynb for examples of how to use
 this code to generate perturbative wavepackets, and from there
 the desired nonlinear spectroscopic signal
 
-The folder monomder_d0.4 includes the necessary files to simulate
+The folder doc/monomder_d0.4 includes the necessary files to simulate
 a two-level system coupled to a single harmonic mode of Huang-Rhys
 factor 0.4^2/2 = 0.08.
 
