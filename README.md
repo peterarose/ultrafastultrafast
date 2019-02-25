@@ -9,6 +9,9 @@ pip install .
 
 Once installed, you should be able to use  
 import ultrafastultrafast as uf2  
+Note: you should not need to install this code in order to run the Jupyter
+notebook Examples.ipynb. This notebook can be used to get an idea of what
+this code does.
 
 # Dependencies
 numpy  
