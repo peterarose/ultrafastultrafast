@@ -51,3 +51,6 @@ k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
 - 'SEM_to_DEM' (optional): containing a 3d numpy array with indicies [i,j,k] of the dipole elements
 connecting the SEM eigenstates (index j) to the DEM eigenstates (index i). The thid index
 k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
+
+# Documentation
+To view documentation open the html file 'doc/build/html/index.html'
