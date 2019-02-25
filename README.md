@@ -40,33 +40,14 @@ example, and TA_5th_order_example.py for a 6-wave mixing example.
 The folder describing the system parameters must have the following two files:
 
 eigenvalues.npz - a numpy archive with the following keys:  
-'GSM': containing all eigenvalues in the ground state manifold  
-'SEM': containing all eigenvalues in the singly excited manifold  
-'DEM' (optional): containing all eigenvalues in the doubly excited manifold  
+- 'GSM': containing all eigenvalues in the ground state manifold  
+- 'SEM': containing all eigenvalues in the singly excited manifold  
+- 'DEM' (optional): containing all eigenvalues in the doubly excited manifold  
 
-mu_GSM_to_SEM_cartesian.npy - a numpy array of dipole matrix elements  
-the array must have three indices [i,j,k]  
-i - index of the singly excited eigenstate  
-j - index of the ground eigenstate  
-k - cartesian coordinate (x,y,z)  
-
-Optional files:  
-mu_SEM_to_DEM_cartesian.npy - a numpy array of dipole matrix elements  
-the array must have three indices [i,j,k]  
-i - index of the doubly excited eigenstate  
-j - index of the singly excited eigenstate  
-k - cartesian coordinate (x,y,z)  
-
-GSM_to_SEM_boolean_overlaps.npy - a boolean numpy array  
-the array must have two indices [i,j]  
-i - index of the singly excited eigenstate  
-j - index of the ground eigenstate  
-Each entry specifies whether or not the corresponding dipole matrix element  
-contributes to the calculations (1 if yes, 0 if no)  
-
-SEM_to_DEM_boolean_overlaps.npy - a boolean numpy array  
-the array must have two indices [i,j]  
-i - index of the doubly excited eigenstate  
-j - index of the singly eigenstate  
-Each entry specifies whether or not the corresponding dipole matrix element  
-contributes to the calculations (1 if yes, 0 if no)
+mu.npz - a numpy archive with the following keys:  
+- 'GSM_to_SEM': containing a 3d numpy array with indicies [i,j,k] of the dipole elements
+connecting the GSM eigenstates (index j) to the SEM eigenstates (index i). The thid index
+k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
+- 'SEM_to_DEM' (optional): containing a 3d numpy array with indicies [i,j,k] of the dipole elements
+connecting the SEM eigenstates (index j) to the DEM eigenstates (index i). The thid index
+k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
