@@ -65,8 +65,8 @@ mu.npz contains up to two 3d numpy arrays with keys:
   :math:`k={x,y,z}`
 
 
-Convolutions
-------------
+Wavepackets
+-----------
 
 In the paper we show that an operator :math:`K_{j^{(*)}}` can be used to
 iteratively calculate all of the perturbative wavepackets needed for a given
@@ -84,6 +84,9 @@ as methods 'up' and 'down', respectively, in the primary class of
 		
 .. autoclass:: Wavepackets
    :members: up,down,next_order,dipole_expectation,polarization_to_signal
+
+Convolutions
+------------
 
 We show in our paper that :math:`K_{j^{(*)}}` is essentially a weighted sum
 over dipole matrix elements, followed by a convolution with the heaviside

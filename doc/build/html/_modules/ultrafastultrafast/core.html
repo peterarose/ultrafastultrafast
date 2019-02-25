@@ -52,11 +52,13 @@
 <span class="kn">from</span> <span class="nn">pyfftw.interfaces.numpy_fft</span> <span class="k">import</span> <span class="n">fft</span><span class="p">,</span> <span class="n">fftshift</span><span class="p">,</span> <span class="n">ifft</span><span class="p">,</span> <span class="n">ifftshift</span><span class="p">,</span> <span class="n">fftfreq</span>
 
 <div class="viewcode-block" id="HeavisideConvolve"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.HeavisideConvolve">[docs]</a><span class="k">class</span> <span class="nc">HeavisideConvolve</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;This class calculates the discrete convolution of an array with the heaviside step function</span>
+    <span class="sd">&quot;&quot;&quot;This class calculates the discrete convolution of an array with the </span>
+<span class="sd">        heaviside step function</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        size (int) : number of linear convolution points</span>
-<span class="sd">        theta_fft (numpy.ndarray) : discrete fourier transform of the step function</span>
+<span class="sd">        theta_fft (numpy.ndarray) : discrete fourier transform of the step </span>
+<span class="sd">            function</span>
 <span class="sd">        a : aligned array of zeros for use with the fftw algorithm</span>
 <span class="sd">        b : empty aligned array for use with the fftw algorithm</span>
 <span class="sd">        c : empty aligned array for use with the fftw algorithm</span>
@@ -67,12 +69,13 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr_size</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            arr_size (int) : number of points desired for the linear convolution</span>
+<span class="sd">            arr_size (int) : number of points desired for the linear </span>
+<span class="sd">                convolution</span>
 <span class="sd">&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">arr_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">theta_fft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heaviside_fft</span><span class="p">()</span>
-        <span class="c1"># The discrete convolution is inherently circular. Therefore we perform the</span>
-        <span class="c1"># convolution using 2N-1 points</span>
+        <span class="c1"># The discrete convolution is inherently circular. Therefore we</span>
+        <span class="c1"># perform the convolution using 2N-1 points</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
@@ -86,7 +89,8 @@
         <span class="sd">&quot;&quot;&quot;This method calculates the FFT of the heaviside step function</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
-<span class="sd">            value_at_zero (float): value of the heaviside step function at x = 0</span>
+<span class="sd">            value_at_zero (float): value of the heaviside step function at </span>
+<span class="sd">                x = 0</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            numpy.ndarray: the FFT of the heaviside step function</span>
@@ -99,15 +103,16 @@
         <span class="k">return</span> <span class="n">fft</span><span class="p">(</span><span class="n">y</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HeavisideConvolve.fft_convolve"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.HeavisideConvolve.fft_convolve">[docs]</a>    <span class="k">def</span> <span class="nf">fft_convolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This method calculates the linear convolution of an input with the heaviside step function</span>
+        <span class="sd">&quot;&quot;&quot;This method calculates the linear convolution of an input with </span>
+<span class="sd">            the heaviside step function</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            arr (numpy.ndarray): 1d array of input function values f(x)</span>
-
 <span class="sd">            d (float): spacing size of grid f(x) is evaluated on, dx</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            numpy.ndarray: linear convolution of arr with heaviside step function</span>
+<span class="sd">            numpy.ndarray: linear convolution of arr with heaviside step </span>
+<span class="sd">                function</span>
 <span class="sd">&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[:</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
 
@@ -127,11 +132,11 @@
 <span class="sd">        Args:</span>
 <span class="sd">            arr (numpy.ndarray): 2d array of input function values f_i(x), </span>
 <span class="sd">                where i is the 1st index of the array</span>
-
 <span class="sd">            d (float): spacing size of grid f_i(x) is evaluated on, dx</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            numpy.ndarray: 2d array of linear convolution of arr with heaviside step function along the second axis of arr</span>
+<span class="sd">            numpy.ndarray: 2d array of linear convolution of arr with </span>
+<span class="sd">                heaviside step function along the second axis of arr</span>
 <span class="sd">&quot;&quot;&quot;</span>
         <span class="n">size0</span><span class="p">,</span><span class="n">size1</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size0</span><span class="p">):</span>
@@ -140,16 +145,25 @@
 
 <div class="viewcode-block" id="Wavepackets"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.Wavepackets">[docs]</a><span class="k">class</span> <span class="nc">Wavepackets</span><span class="p">(</span><span class="n">HeavisideConvolve</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This class is designed to calculate perturbative wavepackets in the</span>
-<span class="sd">light-matter interaction given the eigenvalues of the unperturbed </span>
-<span class="sd">hamiltonian and the material dipole operator evaluated in the</span>
-<span class="sd">eigenbasis of the unperturbed hamiltonian.</span>
+<span class="sd">        light-matter interaction given the eigenvalues of the unperturbed </span>
+<span class="sd">        hamiltonian and the material dipole operator evaluated in the</span>
+<span class="sd">        eigenbasis of the unperturbed hamiltonian.</span>
 
-<span class="sd">    Attributes:</span>
-
+<span class="sd">    Args:</span>
+<span class="sd">        file_path (string): path to folder containing eigenvalues and the</span>
+<span class="sd">            dipole operator for the system Hamiltonian</span>
+<span class="sd">        num_conv_points (int): number of desired points for linear </span>
+<span class="sd">            convolution. Also number of points used to resolve all optical</span>
+<span class="sd">            pulse shapes</span>
+<span class="sd">        dt (float): time spacing used to resolve the shape of all optical</span>
+<span class="sd">            pulses</span>
+<span class="sd">        initial_state (int): index of initial state for psi^0</span>
+<span class="sd">        total_num_time_points (int): total number of time points used for</span>
+<span class="sd">            the spectroscopic calculations.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parameter_file_path</span><span class="p">,</span><span class="o">*</span><span class="p">,</span> <span class="n">num_conv_points</span><span class="o">=</span><span class="mi">138</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">file_path</span><span class="p">,</span><span class="o">*</span><span class="p">,</span> <span class="n">num_conv_points</span><span class="o">=</span><span class="mi">138</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
                  <span class="n">initial_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_num_time_points</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">base_path</span> <span class="o">=</span> <span class="n">parameter_file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_path</span> <span class="o">=</span> <span class="n">file_path</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_homogeneous_linewidth</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
 
@@ -190,9 +204,9 @@
 
     <span class="k">def</span> <span class="nf">set_psi0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">initial_state</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates the unperturbed wavefunction. This code does not </span>
-<span class="sd">support initial states that are coherent super-positions of eigenstates.</span>
-<span class="sd">To perform thermal averaging, recalculate spectra for each initial</span>
-<span class="sd">state that contributes to the thermal ensemble.</span>
+<span class="sd">            support initial states that are coherent super-positions of </span>
+<span class="sd">            eigenstates. To perform thermal averaging, recalculate spectra </span>
+<span class="sd">            for each initial state that contributes to the thermal ensemble.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            initial_state (int): index for initial eigenstate in GSM</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -205,9 +219,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">psi0</span> <span class="o">=</span> <span class="n">psi0_dict</span>
 
     <span class="k">def</span> <span class="nf">set_U0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculates and stores the time-evolution operator for the unperturbed hamiltonian.</span>
-<span class="sd">Time evolution is handled separately in each manifold, so the time-evolution operator is</span>
-<span class="sd">stored as a list, called self.unitary.</span>
+        <span class="sd">&quot;&quot;&quot;Calculates and stores the time-evolution operator for the </span>
+<span class="sd">            unperturbed hamiltonian.</span>
+<span class="sd">            Time evolution is handled separately in each manifold, so the </span>
+<span class="sd">            time-evolution operator is stored as a list, called self.unitary.</span>
 <span class="sd">&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">)):</span>
@@ -218,7 +233,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
 
     <span class="k">def</span> <span class="nf">get_closest_index_and_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">value</span><span class="p">,</span><span class="n">array</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Given an array and a desired value, finds the closest actual value </span>
+        <span class="sd">&quot;&quot;&quot;Given an array and a desired value, finds the closest actual value</span>
 <span class="sd">stored in that array, and returns that value, along with its corresponding </span>
 <span class="sd">array index</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -240,11 +255,12 @@
 
     <span class="k">def</span> <span class="nf">load_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Load the precalculated dipole overlaps.  The dipole operator must</span>
-<span class="sd">be stored as a .npy file, and must contain a single array, with three indices:</span>
-<span class="sd">(upper manifold eigenfunction, lower manifold eigenfunction, cartesian coordinate).</span>
-<span class="sd">There must be one or two files, one describing the overlap between the ground and </span>
-<span class="sd">singly-excited manifold, and one describing the dipole overlap between the </span>
-<span class="sd">singly-excited and doubly-excited manifold (optional)&quot;&quot;&quot;</span>
+<span class="sd">be stored as a .npz file, and must contain a single array, with three </span>
+<span class="sd">indices: (upper manifold eigenfunction, lower manifold eigenfunction, </span>
+<span class="sd">cartesian coordinate).  There must be one or two files, one describing the </span>
+<span class="sd">overlap between the ground and singly-excited manifold, and one describing </span>
+<span class="sd">the dipole overlap between the singly-excited and doubly-excited manifold </span>
+<span class="sd">(optional)&quot;&quot;&quot;</span>
         <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu.npz&#39;</span><span class="p">)</span>
         <span class="n">file_name_pruned</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_pruned.npz&#39;</span><span class="p">)</span>
         <span class="n">file_name_bool</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_boolean.npz&#39;</span><span class="p">)</span>
@@ -405,7 +421,7 @@
 <div class="viewcode-block" id="Wavepackets.next_order"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.Wavepackets.next_order">[docs]</a>    <span class="k">def</span> <span class="nf">next_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="n">manifold_change</span><span class="p">,</span>
                    <span class="o">*</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                    <span class="n">pulse_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function connects psi^(n) to psi^(n+1) using a DFT convolution algorithm.</span>
+        <span class="sd">&quot;&quot;&quot;This function connects psi_p to psi+pj^(*) using a DFT convolution algorithm.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            psi_in_dict (dict): input wavefunction dictionary</span>
@@ -415,6 +431,9 @@
 <span class="sd">            gamma (float): optical dephasing (only use with final interaction)</span>
 <span class="sd">            new_manifold_mask (np.ndarray): optional - define the states to be considered </span>
 <span class="sd">                in the next manifold</span>
+<span class="sd">        </span>
+<span class="sd">        Return:</span>
+<span class="sd">            (dict): next-order wavefunction</span>
 <span class="sd">&quot;&quot;&quot;</span>
         <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
         <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
@@ -479,6 +498,9 @@
 <span class="sd">            gamma (float): optical dephasing (only use with final interaction)</span>
 <span class="sd">            new_manifold_mask (np.ndarray): optional - define the states to be considered </span>
 <span class="sd">                in the next manifold</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): output from method next_order</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_order</span><span class="p">(</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
@@ -496,11 +518,15 @@
 <span class="sd">            gamma (float): optical dephasing (only use with final interaction)</span>
 <span class="sd">            new_manifold_mask (np.ndarray): optional - define the states to be considered </span>
 <span class="sd">                in the next manifold</span>
-<span class="sd">&quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_order</span><span class="p">(</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): output from method next_order</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        
+        <span class="n">psi_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_order</span><span class="p">(</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
                                <span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">new_manifold_mask</span><span class="p">,</span>
-                               <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span></div>
+                               <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">psi_dict</span></div>
 
     <span class="c1">### Tools for taking the expectation value of the dipole operator with perturbed wavepackets</span>
 
@@ -544,9 +570,11 @@
         <span class="k">return</span> <span class="n">psi_dict</span>
 
 <div class="viewcode-block" id="Wavepackets.dipole_expectation"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.Wavepackets.dipole_expectation">[docs]</a>    <span class="k">def</span> <span class="nf">dipole_expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bra_dict_original</span><span class="p">,</span><span class="n">ket_dict_original</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Given two wavefunctions, this computes the expectation value of the two with respect </span>
-<span class="sd">to the dipole operator.  Both wavefunctions are taken to be kets, and the one named &#39;bra&#39; is</span>
-<span class="sd">converted to a bra by taking the complex conjugate.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Computes the expectation value of the two wavefunctions with </span>
+<span class="sd">            respect to the dipole operator.  Both wavefunctions are taken to </span>
+<span class="sd">            be kets, and the one named &#39;bra&#39; is converted to a bra by taking </span>
+<span class="sd">            the complex conjugate.</span>
+<span class="sd">&quot;&quot;&quot;</span>
         <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
         <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
 
@@ -656,8 +684,10 @@
 
 <div class="viewcode-block" id="Wavepackets.polarization_to_signal"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.Wavepackets.polarization_to_signal">[docs]</a>    <span class="k">def</span> <span class="nf">polarization_to_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">P_of_t_in</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">return_polarization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                <span class="n">local_oscillator_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This function generates a frequency-resolved signal from a polarization field</span>
-<span class="sd">local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;This function generates a frequency-resolved signal from a </span>
+<span class="sd">            polarization field local_oscillator_number - usually the local </span>
+<span class="sd">            oscillator will be the last pulse in the list self.efields</span>
+<span class="sd">&quot;&quot;&quot;</span>
         <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">local_oscillator_number</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">exp_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>

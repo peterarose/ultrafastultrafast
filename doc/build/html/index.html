@@ -89,8 +89,8 @@ excited manifold, j are the indices of the singly excited manifold, and k is
 the cartesian index where <span class="math">\(k = {0,1,2}\)</span> corresponds to
 <span class="math">\(k={x,y,z}\)</span></li>
 </ul>
-<div class="section" id="convolutions">
-<h2>Convolutions<a class="headerlink" href="#convolutions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="wavepackets">
+<h2>Wavepackets<a class="headerlink" href="#wavepackets" title="Permalink to this headline">¶</a></h2>
 <p>In the paper we show that an operator <span class="math">\(K_{j^{(*)}}\)</span> can be used to
 iteratively calculate all of the perturbative wavepackets needed for a given
 spectroscopic signal.  <span class="math">\(K_{j}\)</span> describes an optical excitation of the
@@ -102,19 +102,40 @@ as methods ‘up’ and ‘down’, respectively, in the primary class of
 </div>
 <span class="target" id="module-ultrafastultrafast"></span><dl class="class">
 <dt id="ultrafastultrafast.Wavepackets">
-<em class="property">class </em><code class="descclassname">ultrafastultrafast.</code><code class="descname">Wavepackets</code><span class="sig-paren">(</span><em>parameter_file_path</em>, <em>*</em>, <em>num_conv_points=138</em>, <em>dt=0.1</em>, <em>initial_state=0</em>, <em>total_num_time_points=2000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class is designed to calculate perturbative wavepackets in the
-light-matter interaction given the eigenvalues of the unperturbed
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.</code><code class="descname">Wavepackets</code><span class="sig-paren">(</span><em>file_path</em>, <em>*</em>, <em>num_conv_points=138</em>, <em>dt=0.1</em>, <em>initial_state=0</em>, <em>total_num_time_points=2000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This class is designed to calculate perturbative wavepackets in the</dt>
+<dd>light-matter interaction given the eigenvalues of the unperturbed
 hamiltonian and the material dipole operator evaluated in the
-eigenbasis of the unperturbed hamiltonian.</p>
-<blockquote>
-<div>Attributes:</div></blockquote>
+eigenbasis of the unperturbed hamiltonian.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/string.html#module-string" title="(in Python v3.7)"><em>string</em></a>) – path to folder containing eigenvalues and the
+dipole operator for the system Hamiltonian</li>
+<li><strong>num_conv_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – number of desired points for linear
+convolution. Also number of points used to resolve all optical
+pulse shapes</li>
+<li><strong>dt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – time spacing used to resolve the shape of all optical
+pulses</li>
+<li><strong>initial_state</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of initial state for psi^0</li>
+<li><strong>total_num_time_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – total number of time points used for
+the spectroscopic calculations.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="ultrafastultrafast.Wavepackets.dipole_expectation">
 <code class="descname">dipole_expectation</code><span class="sig-paren">(</span><em>bra_dict_original</em>, <em>ket_dict_original</em>, <em>*</em>, <em>pulse_number=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.dipole_expectation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.dipole_expectation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given two wavefunctions, this computes the expectation value of the two with respect
-to the dipole operator.  Both wavefunctions are taken to be kets, and the one named ‘bra’ is
-converted to a bra by taking the complex conjugate.</p>
+<dd><p>Computes the expectation value of the two wavefunctions with
+respect to the dipole operator.  Both wavefunctions are taken to
+be kets, and the one named ‘bra’ is converted to a bra by taking
+the complex conjugate.</p>
 </dd></dl>
 
 <dl class="method">
@@ -128,7 +149,7 @@ converted to a bra by taking the complex conjugate.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
 <li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
 ‘impulsive’</li>
@@ -138,6 +159,12 @@ in the next manifold</li>
 </ul>
 </td>
 </tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">output from method next_order</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</td>
+</tr>
 </tbody>
 </table>
 </dd></dl>
@@ -145,12 +172,12 @@ in the next manifold</li>
 <dl class="method">
 <dt id="ultrafastultrafast.Wavepackets.next_order">
 <code class="descname">next_order</code><span class="sig-paren">(</span><em>psi_in_dict</em>, <em>manifold_change</em>, <em>*</em>, <em>gamma=0</em>, <em>new_manifold_mask=None</em>, <em>pulse_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.next_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.next_order" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function connects psi^(n) to psi^(n+1) using a DFT convolution algorithm.</p>
+<dd><p>This function connects psi_p to psi+pj^(*) using a DFT convolution algorithm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
 <li><strong>manifold_change</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – is either +/-1 (up or down)</li>
 <li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
@@ -161,6 +188,12 @@ in the next manifold</li>
 </ul>
 </td>
 </tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">next-order wavefunction</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</td>
+</tr>
 </tbody>
 </table>
 </dd></dl>
@@ -168,8 +201,9 @@ in the next manifold</li>
 <dl class="method">
 <dt id="ultrafastultrafast.Wavepackets.polarization_to_signal">
 <code class="descname">polarization_to_signal</code><span class="sig-paren">(</span><em>P_of_t_in</em>, <em>*</em>, <em>return_polarization=False</em>, <em>local_oscillator_number=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.polarization_to_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.polarization_to_signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function generates a frequency-resolved signal from a polarization field
-local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields</p>
+<dd><p>This function generates a frequency-resolved signal from a
+polarization field local_oscillator_number - usually the local
+oscillator will be the last pulse in the list self.efields</p>
 </dd></dl>
 
 <dl class="method">
@@ -183,7 +217,7 @@ local_oscillator_number - usually the local oscillator will be the last pulse in
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
 <li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
 ‘impulsive’</li>
@@ -193,12 +227,21 @@ in the next manifold</li>
 </ul>
 </td>
 </tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">output from method next_order</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</td>
+</tr>
 </tbody>
 </table>
 </dd></dl>
 
 </dd></dl>
 
+</div>
+<div class="section" id="convolutions">
+<h2>Convolutions<a class="headerlink" href="#convolutions" title="Permalink to this headline">¶</a></h2>
 <p>We show in our paper that <span class="math">\(K_{j^{(*)}}\)</span> is essentially a weighted sum
 over dipole matrix elements, followed by a convolution with the heaviside
 step function <span class="math">\(\theta\)</span>.  We implement this convolution using the FFT
@@ -208,7 +251,10 @@ documented here</p>
 <dl class="class">
 <dt id="ultrafastultrafast.core.HeavisideConvolve">
 <em class="property">class </em><code class="descclassname">ultrafastultrafast.core.</code><code class="descname">HeavisideConvolve</code><span class="sig-paren">(</span><em>arr_size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve" title="Permalink to this definition">¶</a></dt>
-<dd><p>This class calculates the discrete convolution of an array with the heaviside step function</p>
+<dd><dl class="docutils">
+<dt>This class calculates the discrete convolution of an array with the</dt>
+<dd>heaviside step function</dd>
+</dl>
 <dl class="attribute">
 <dt id="ultrafastultrafast.HeavisideConvolve.size">
 <code class="descname">size</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.size" title="Permalink to this definition">¶</a></dt>
@@ -218,7 +264,8 @@ documented here</p>
 <dl class="attribute">
 <dt id="ultrafastultrafast.HeavisideConvolve.theta_fft">
 <code class="descname">theta_fft</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.theta_fft" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>numpy.ndarray</em> – discrete fourier transform of the step function</p>
+<dd><p><em>numpy.ndarray</em> – discrete fourier transform of the step
+function</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -254,7 +301,10 @@ documented here</p>
 <dl class="method">
 <dt id="ultrafastultrafast.core.HeavisideConvolve.fft_convolve">
 <code class="descname">fft_convolve</code><span class="sig-paren">(</span><em>arr</em>, <em>*</em>, <em>d=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve.fft_convolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve.fft_convolve" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method calculates the linear convolution of an input with the heaviside step function</p>
+<dd><dl class="docutils">
+<dt>This method calculates the linear convolution of an input with</dt>
+<dd>the heaviside step function</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -265,7 +315,12 @@ documented here</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">linear convolution of arr with heaviside step function</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>linear convolution of arr with heaviside step</dt>
+<dd><p class="first last">function</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
@@ -290,7 +345,12 @@ where i is the 1st index of the array</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2d array of linear convolution of arr with heaviside step function along the second axis of arr</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>2d array of linear convolution of arr with</dt>
+<dd><p class="first last">heaviside step function along the second axis of arr</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
@@ -308,7 +368,8 @@ where i is the 1st index of the array</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value_at_zero</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – value of the heaviside step function at x = 0</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value_at_zero</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – value of the heaviside step function at
+x = 0</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the FFT of the heaviside step function</td>
 </tr>
@@ -371,12 +432,11 @@ coordinate.</dd>
 <dt id="ultrafastultrafast.DipolePruning.load_mu">
 <code class="descname">load_mu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.load_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.load_mu" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load the precalculated dipole overlaps.  The dipole operator must
-be stored as a .npz file, and must contain a single array, with three
-indices: (upper manifold eigenfunction, lower manifold eigenfunction,
-cartesian coordinate).  There must be one or two files, one describing the
-overlap between the ground and singly-excited manifold, and one describing
-the dipole overlap between the singly-excited and doubly-excited manifold
-(optional)</p>
+be stored as a .npz file, and must contain a up to two arrays, each with
+three indices: (upper manifold eigenfunction, lower manifold eigenfunction,
+cartesian coordinate).  Keys: ‘GSM_to_SEM’ connects the ground state and
+singly excited manifolds, ‘SEM_to_DEM’ connects the singly and doubly excited
+manifolds.</p>
 </dd></dl>
 
 <dl class="method">

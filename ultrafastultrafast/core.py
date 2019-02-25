@@ -103,9 +103,9 @@ class HeavisideConvolve:
 
 class Wavepackets(HeavisideConvolve):
     """This class is designed to calculate perturbative wavepackets in the
-light-matter interaction given the eigenvalues of the unperturbed 
-hamiltonian and the material dipole operator evaluated in the
-eigenbasis of the unperturbed hamiltonian.
+        light-matter interaction given the eigenvalues of the unperturbed 
+        hamiltonian and the material dipole operator evaluated in the
+        eigenbasis of the unperturbed hamiltonian.
 
     Args:
         file_path (string): path to folder containing eigenvalues and the
@@ -116,9 +116,8 @@ eigenbasis of the unperturbed hamiltonian.
         dt (float): time spacing used to resolve the shape of all optical
             pulses
         initial_state (int): index of initial state for psi^0
-        total_num_time_poitns (int): total number of time points used for
+        total_num_time_points (int): total number of time points used for
             the spectroscopic calculations.
-
 """
     def __init__(self,file_path,*, num_conv_points=138, dt=0.1,
                  initial_state=0, total_num_time_points = 2000):
@@ -392,7 +391,7 @@ a 1D numpy boolean array, it is used as the mask for next manifold."""
                 in the next manifold
         
         Return:
-            psi_dict (dict): next-order wavefunction
+            (dict): next-order wavefunction
 """
         pulse_time = self.pulse_times[pulse_number]
         pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
@@ -459,7 +458,7 @@ a 1D numpy boolean array, it is used as the mask for next manifold."""
                 in the next manifold
 
         Returns:
-            output from method next_order
+            (dict): output from method next_order
 """
 
         return self.next_order(psi_in_dict,1,gamma=gamma,
@@ -479,12 +478,13 @@ a 1D numpy boolean array, it is used as the mask for next manifold."""
                 in the next manifold
 
         Returns:
-            output from method next_order
+            (dict): output from method next_order
 """
-
-        return self.next_order(psi_in_dict,-1,gamma=gamma,
+        
+        psi_dict = self.next_order(psi_in_dict,-1,gamma=gamma,
                                new_manifold_mask = new_manifold_mask,
                                pulse_number = pulse_number)
+        return psi_dict
 
     ### Tools for taking the expectation value of the dipole operator with perturbed wavepackets
 
@@ -528,9 +528,11 @@ the dot product of the final electric field polarization vector."""
         return psi_dict
 
     def dipole_expectation(self,bra_dict_original,ket_dict_original,*,pulse_number = -1):
-        """Computes the expectation value of the two wavefunctions with respect 
-            to the dipole operator.  Both wavefunctions are taken to be kets, and the one named 'bra' is
-converted to a bra by taking the complex conjugate."""
+        """Computes the expectation value of the two wavefunctions with 
+            respect to the dipole operator.  Both wavefunctions are taken to 
+            be kets, and the one named 'bra' is converted to a bra by taking 
+            the complex conjugate.
+"""
         pulse_time = self.pulse_times[pulse_number]
         pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
 
@@ -640,8 +642,10 @@ frequency integrated."""
 
     def polarization_to_signal(self,P_of_t_in,*,return_polarization=False,
                                local_oscillator_number = -1):
-        """This function generates a frequency-resolved signal from a polarization field
-local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields"""
+        """This function generates a frequency-resolved signal from a 
+            polarization field local_oscillator_number - usually the local 
+            oscillator will be the last pulse in the list self.efields
+"""
         pulse_time = self.pulse_times[local_oscillator_number]
         if self.gamma != 0:
             exp_factor = np.exp(-self.gamma * self.t)
