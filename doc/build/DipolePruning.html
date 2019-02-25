@@ -1,0 +1,154 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>&lt;no title&gt; &#8212; ultrafastultrafast 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="math">
+\[\boldsymbol{\mu_{ij}} = \langle i|\hat{\boldsymbol{\mu}} |j\rangle\]</div>
+<dl class="class">
+<dt id="ultrafastultrafast.DipolePruning">
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.</code><code class="descname">DipolePruning</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class takes the dipole operator, mu, and uses Bessel’s
+inequality to determine the smallest number of states needed to
+correctly resolve mu, to the given tolerance.  It expects a file
+mu.npz, with archive keys ‘mu_GSM_to_SEM’ and, optionally,
+‘mu_SEM_to_DEM’.</p>
+<p>The keys must return 3-index numpy arrays
+arr[i,j,k] where the first two indices refer to eigenstates i and j:</p>
+<div class="math">
+\[\boldsymbol{\mu_{ij}} = \langle i|\hat{\boldsymbol{\mu}} |j\rangle\]</div>
+<p>and the third index refers to the cartesian coordinate <span class="math">\(k = {x,y,z}\)</span>
+of the molecular frame where:</p>
+<div class="math">
+\[\boldsymbol{\mu} = \mu_x\boldsymbol{x} + \mu_y\boldsymbol{y} + \mu_z\boldsymbol{z}\]</div>
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.calculate_boolean_mu">
+<code class="descname">calculate_boolean_mu</code><span class="sig-paren">(</span><em>overlap_matrix</em>, <em>*</em>, <em>rel_tol=1e-05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.calculate_boolean_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.calculate_boolean_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses Bessel’s inequality to find the minimum number of dipole
+matrix elements needed to correctly resolve the dipole operator to the
+given tolerance.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>overlap_matrix (np.ndarray): 3d-array of dipole matrix elements [i,j,k]</dt>
+<dd>where i,j are eigenstates and k is a cartesian
+coordinate</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.load_mu">
+<code class="descname">load_mu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.load_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.load_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the precalculated dipole overlaps.  The dipole operator must
+be stored as a .npz file, and must contain a single array, with three indices:
+(upper manifold eigenfunction, lower manifold eigenfunction, cartesian coordinate).
+There must be one or two files, one describing the overlap between the ground and
+singly-excited manifold, and one describing the dipole overlap between the
+singly-excited and doubly-excited manifold (optional)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.save_boolean_mu">
+<code class="descname">save_boolean_mu</code><span class="sig-paren">(</span><em>rel_tol</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.save_boolean_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.save_boolean_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and save the boolean masks for the dipole matrices
+at the given tolerance</p>
+</dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ultrafastultrafast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Peter A. Rose and Jacob J. Krich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/DipolePruning.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

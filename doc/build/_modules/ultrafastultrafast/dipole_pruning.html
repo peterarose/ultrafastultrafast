@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ultrafastultrafast.dipole_pruning &#8212; ultrafastultrafast 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for ultrafastultrafast.dipole_pruning</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module dipole_pruning</span>
+<span class="sd">================</span>
+<span class="sd">This module supplies one class, DipolePruning, that is used to find the</span>
+<span class="sd">minimum number of elements required to resolve the dipole operator, to the</span>
+<span class="sd">requested tolerance.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="DipolePruning"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.DipolePruning">[docs]</a><span class="k">class</span> <span class="nc">DipolePruning</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;This class takes the dipole operator, mu, which must be expressed in</span>
+<span class="sd">the eigenbasis of the system hamiltonian and uses Bessel&#39;s</span>
+<span class="sd">inequality to determine the smallest number of states needed to</span>
+<span class="sd">correctly resolve mu, to the given tolerance.  It expects a file</span>
+<span class="sd">mu.npz in the folder &#39;file_path&#39;, with archive keys &#39;mu_GSM_to_SEM&#39; and, </span>
+<span class="sd">optionally, &#39;mu_SEM_to_DEM&#39;.  Each key must return a 3d numpy array with </span>
+<span class="sd">indices [i,j,k], where i and j are indices of the eigenvalues of the system </span>
+<span class="sd">hamiltonian, and k is an index 0,1,2 cooresponding to cartesian coordinates </span>
+<span class="sd">x,y,z.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">file_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize object with</span>
+<span class="sd">Args:</span>
+<span class="sd">    file_path (str): file path to folder containing mu.npz</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_eigenvalues</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_mu</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DipolePruning.load_mu"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.DipolePruning.load_mu">[docs]</a>    <span class="k">def</span> <span class="nf">load_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load the precalculated dipole overlaps.  The dipole operator must</span>
+<span class="sd">be stored as a .npz file, and must contain a single array, with three </span>
+<span class="sd">indices: (upper manifold eigenfunction, lower manifold eigenfunction, </span>
+<span class="sd">cartesian coordinate).  There must be one or two files, one describing the </span>
+<span class="sd">overlap between the ground and singly-excited manifold, and one describing </span>
+<span class="sd">the dipole overlap between the singly-excited and doubly-excited manifold </span>
+<span class="sd">(optional)&quot;&quot;&quot;</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu.npz&#39;</span><span class="p">)</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+        <span class="n">mu_keys</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="p">[</span><span class="n">mu</span><span class="p">[</span><span class="n">mu_key</span><span class="p">]</span> <span class="k">for</span> <span class="n">mu_key</span> <span class="ow">in</span> <span class="n">mu_keys</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DipolePruning.calculate_boolean_mu"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.DipolePruning.calculate_boolean_mu">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_boolean_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">overlap_matrix</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">rel_tol</span><span class="o">=</span><span class="mf">1E-3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Uses Bessel&#39;s inequality to find the minimum number of dipole</span>
+<span class="sd">matrix elements needed to correctly resolve the dipole operator to the</span>
+<span class="sd">given tolerance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overlap_matrix (np.ndarray) : 3d-array of dipole matrix elements </span>
+<span class="sd">                [i,j,k] where i,j are eigenstates and k is a cartesian </span>
+<span class="sd">                coordinate.</span>
+
+<span class="sd">            rel_tol (float) : relative tolerance for resolving the dipole</span>
+<span class="sd">                operator mu.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">dim0</span><span class="p">,</span> <span class="n">dim1</span> <span class="o">=</span> <span class="n">overlap_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">bool_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">dim0</span><span class="p">,</span><span class="n">dim1</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        
+        <span class="c1"># Inner product over cartesian coordinates: mu_ij dot mu_ij for each i,j pair</span>
+        <span class="c1"># where mu_ij is a cartesian vector </span>
+        <span class="n">prob_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">overlap_matrix</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+        <span class="c1"># Sum over all lower manifold states</span>
+        <span class="n">probabilities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">prob_matrix</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># For each state n in the higher manifold</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim0</span><span class="p">):</span>
+            <span class="n">prob_tot</span> <span class="o">=</span> <span class="n">probabilities</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+            <span class="c1"># All lower states that connect to state n</span>
+            <span class="n">prob_list</span> <span class="o">=</span> <span class="n">prob_matrix</span><span class="p">[</span><span class="n">n</span><span class="p">,:]</span>
+            <span class="c1"># Sort lower states by magnitude of mu_nj dot mu_nj</span>
+            <span class="n">prob_sort_ind</span> <span class="o">=</span> <span class="n">prob_list</span><span class="o">.</span><span class="n">argsort</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">prob_sorted</span> <span class="o">=</span> <span class="n">prob_list</span><span class="p">[</span><span class="n">prob_sort_ind</span><span class="p">]</span>
+            <span class="n">prob</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Bessel&#39;s inequality</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">prob_sorted</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="n">prob</span> <span class="o">+=</span> <span class="n">prob_sorted</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">prob_tot</span> <span class="o">-</span> <span class="n">prob</span><span class="p">)</span><span class="o">/</span><span class="n">prob_tot</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">rel_tol</span><span class="p">:</span>
+                    <span class="c1"># If the relative tolerance is attained, break out of loop</span>
+                    <span class="k">break</span>
+            <span class="c1">#Keep only the states needed to satisfy the specified rel_tol</span>
+            <span class="n">non_zero_ind</span> <span class="o">=</span> <span class="n">prob_sort_ind</span><span class="p">[:</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1">#Set the states needed as True in a boolean array</span>
+            <span class="n">bool_mat</span><span class="p">[</span><span class="n">n</span><span class="p">,</span><span class="n">non_zero_ind</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">bool_mat</span></div>
+
+<div class="viewcode-block" id="DipolePruning.save_boolean_mu"><a class="viewcode-back" href="../../index.html#ultrafastultrafast.DipolePruning.save_boolean_mu">[docs]</a>    <span class="k">def</span> <span class="nf">save_boolean_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">rel_tol</span> <span class="o">=</span> <span class="mf">1E-3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create and save the boolean masks for the dipole matrices</span>
+<span class="sd">at the given tolerance. Files created by this function are mu_pruned.npz</span>
+<span class="sd">and mu_boolean.npz.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rel_tol (float) : relative tolerance for resolving the dipole</span>
+<span class="sd">                operator mu.  Default value of 0.001 has been found to work </span>
+<span class="sd">                well with vibronic systems to give convergence of the </span>
+<span class="sd">                Transient Absorption signal of better than 1%.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">file_name_pruned</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_pruned.npz&#39;</span><span class="p">)</span>
+        <span class="n">file_name_boolean</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_boolean.npz&#39;</span><span class="p">)</span>
+        <span class="n">mu_GSM_to_SEM_boolean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_boolean_mu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">)</span>
+        <span class="n">mu_GSM_to_SEM_pruned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span> <span class="o">*</span> <span class="n">mu_GSM_to_SEM_boolean</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="n">mu_boolean_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;GSM_to_SEM&#39;</span><span class="p">:</span><span class="n">mu_GSM_to_SEM_boolean</span><span class="p">}</span>
+        <span class="n">mu_pruned_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;GSM_to_SEM&#39;</span><span class="p">:</span><span class="n">mu_GSM_to_SEM_pruned</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="s1">&#39;DEM&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">:</span>
+            <span class="n">mu_SEM_to_DEM_boolean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_boolean_mu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">)</span>
+            <span class="n">mu_SEM_to_DEM_pruned</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span> <span class="o">*</span> <span class="n">mu_SEM_to_DEM_boolean</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+            <span class="n">mu_boolean_dict</span><span class="p">[</span><span class="s1">&#39;SEM_to_DEM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu_SEM_to_DEM_boolean</span>
+            <span class="n">mu_pruned_dict</span><span class="p">[</span><span class="s1">&#39;SEM_to_DEM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu_SEM_to_DEM_pruned</span>
+
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">file_name_pruned</span><span class="p">,</span><span class="o">**</span><span class="n">mu_pruned_dict</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">file_name_boolean</span><span class="p">,</span><span class="o">**</span><span class="n">mu_boolean_dict</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">ultrafastultrafast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Peter A. Rose and Jacob J. Krich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

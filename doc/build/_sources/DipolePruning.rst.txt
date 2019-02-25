@@ -1,0 +1,5 @@
+.. math::
+   \boldsymbol{\mu_{ij}} = \langle i|\hat{\boldsymbol{\mu}} |j\rangle
+
+.. autoclass:: ultrafastultrafast.DipolePruning
+   :members:

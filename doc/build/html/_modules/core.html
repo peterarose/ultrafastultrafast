@@ -1,0 +1,750 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>core &#8212; ultrafastultrafast 0.1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for core</h1><div class="highlight"><pre>
+<span></span><span class="c1">#Standard python libraries</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="c1">#Dependencies - numpy, scipy, matplotlib, pyfftw</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pyfftw</span>
+<span class="kn">from</span> <span class="nn">pyfftw.interfaces.numpy_fft</span> <span class="k">import</span> <span class="n">fft</span><span class="p">,</span> <span class="n">fftshift</span><span class="p">,</span> <span class="n">ifft</span><span class="p">,</span> <span class="n">ifftshift</span><span class="p">,</span> <span class="n">fftfreq</span>
+
+<div class="viewcode-block" id="HeavisideConvolve"><a class="viewcode-back" href="../index.html#core.HeavisideConvolve">[docs]</a><span class="k">class</span> <span class="nc">HeavisideConvolve</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This class calculates the discrete convolution of an array with the heaviside step function</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        size (int) : number of linear convolution points</span>
+<span class="sd">        theta_fft (numpy.ndarray) : discrete fourier transform of the step function</span>
+<span class="sd">        a : aligned array of zeros for use with the fftw algorithm</span>
+<span class="sd">        b : empty aligned array for use with the fftw algorithm</span>
+<span class="sd">        c : empty aligned array for use with the fftw algorithm</span>
+<span class="sd">        fft : method for calculating the FFT of a (stores the result in b)</span>
+<span class="sd">        ifft : method for calculating the IFFT of b (stores the result in c)</span>
+<span class="sd">        </span>
+<span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            arr_size (int): number of points desired for the linear convolution&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">arr_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">theta_fft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heaviside_fft</span><span class="p">()</span>
+        <span class="c1"># The discrete convolution is inherently circular. Therefore we perform the</span>
+        <span class="c1"># convolution using 2N-1 points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">empty_aligned</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex128&#39;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+        <span class="n">pyfftw</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+        <span class="n">pyfftw</span><span class="o">.</span><span class="n">interfaces</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set_keepalive_time</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fft</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">FFTW</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifft</span> <span class="o">=</span> <span class="n">pyfftw</span><span class="o">.</span><span class="n">FFTW</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="s1">&#39;FFTW_BACKWARD&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">heaviside_fft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">value_at_zero</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method calculates the FFT of the heaviside step function</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            value_at_zero (float): value of the heaviside step function at x = 0</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: the FFT of the heaviside step function</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="c1"># The discrete convolution is inherently circular. Therefore we perform the</span>
+        <span class="c1"># convolution using 2N-1 points. Spacing dx is irrelevant for evaluating</span>
+        <span class="c1"># the heaviside step function. However it is crucial that the x = 0 is included</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">heaviside</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">value_at_zero</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fft</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fft_convolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method calculates the linear convolution of an input with the heaviside step function</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            arr (numpy.ndarray): 1d array of input function values f(x)</span>
+<span class="sd">            d (float): spacing size of grid f(x) is evaluated on, dx</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: linear convolution of arr with heaviside step function</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">[:</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fft</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta_fft</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifft</span><span class="p">()</span>
+        <span class="c1"># Return only the results of the linear convolution</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span><span class="p">[</span><span class="o">-</span><span class="n">arr</span><span class="o">.</span><span class="n">size</span><span class="p">:]</span> <span class="o">*</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">fft_convolve2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method loops over fft_convolve in order to perform the convolution</span>
+<span class="sd">of input array with the heaviside step function along the second axis of arr</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            arr (numpy.ndarray): 2d array of input function values f_i(x), where i is the 1st index of the array</span>
+<span class="sd">            d (float): spacing size of grid f_i(x) is evaluated on, dx</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy.ndarray: 2d array of linear convolution of arr with heaviside step function along the second axis of arr</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">size0</span><span class="p">,</span><span class="n">size1</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size0</span><span class="p">):</span>
+            <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fft_convolve</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span><span class="n">d</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">arr</span></div>
+
+<span class="k">class</span> <span class="nc">Wavepackets</span><span class="p">(</span><span class="n">HeavisideConvolve</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class is designed to calculate perturbative wavepackets in the</span>
+<span class="sd">light-matter interaction given the eigenvalues of the unperturbed </span>
+<span class="sd">hamiltonian and the material dipole operator evaluated in the</span>
+<span class="sd">eigenbasis of the unperturbed hamiltonian.</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parameter_file_path</span><span class="p">,</span><span class="o">*</span><span class="p">,</span> <span class="n">num_conv_points</span><span class="o">=</span><span class="mi">138</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">initial_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_num_time_points</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_path</span> <span class="o">=</span> <span class="n">parameter_file_path</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_homogeneous_linewidth</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_eigenvalues</span><span class="p">()</span>
+
+        <span class="c1">### store original eigenvalues for recentering purposes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orignal_eigenvalues</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_mu</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">efield_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">num_conv_points</span><span class="o">//</span><span class="mi">2</span><span class="p">),</span><span class="n">num_conv_points</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="n">num_conv_points</span><span class="o">%</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efield_w</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">fftshift</span><span class="p">(</span><span class="n">fftfreq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">efield_t</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="n">dt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electric_field_mask</span><span class="p">()</span>
+
+        <span class="c1"># Code will not actually function until the following three empty lists are set by the user</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">efields</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#initialize empty list of electric field shapes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">polarization_sequence</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#initialize empty polarization sequence</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#initialize empty list of pulse arrival times</span>
+        
+        <span class="n">HeavisideConvolve</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">num_conv_points</span><span class="p">)</span>
+        
+        <span class="c1"># Initialize time array to be used for all desired delay times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">total_num_time_points</span><span class="o">//</span><span class="mi">2</span><span class="p">),</span><span class="n">total_num_time_points</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="n">total_num_time_points</span><span class="o">%</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span>
+        <span class="c1"># The first pulse is assumed to arrive at t = 0, therefore shift array so that</span>
+        <span class="c1"># it includes only points where the signal will be nonzero (number of negative time points</span>
+        <span class="c1"># is essentially based upon width of the electric field, via the proxy of the size parameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span>
+        
+        <span class="n">f</span> <span class="o">=</span> <span class="n">fftshift</span><span class="p">(</span><span class="n">fftfreq</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">f</span>
+        
+        <span class="c1"># Initialize unperturbed wavefunction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_psi0</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
+
+        <span class="c1"># Define the unitary operator for each manifold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_U0</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">set_psi0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">initial_state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates the unperturbed wavefunction. This code does not </span>
+<span class="sd">support initial states that are coherent super-positions of eigenstates.</span>
+<span class="sd">To perform thermal averaging, recalculate spectra for each initial</span>
+<span class="sd">state that contributes to the thermal ensemble.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            initial_state (int): index for initial eigenstate in GSM</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">psi0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+        <span class="n">bool_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+        <span class="n">bool_mask</span><span class="p">[</span><span class="n">initial_state</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="c1"># This code expects wavefunctions represented as dictionaries in the following format</span>
+        <span class="n">psi0_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">psi0</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">bool_mask</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">psi0</span> <span class="o">=</span> <span class="n">psi0_dict</span>
+
+    <span class="k">def</span> <span class="nf">set_U0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates and stores the time-evolution operator for the unperturbed hamiltonian.</span>
+<span class="sd">Time evolution is handled separately in each manifold, so the time-evolution operator is</span>
+<span class="sd">stored as a list, called self.unitary.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">)):</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">E</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:])</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_homogeneous_linewidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">gamma</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+
+    <span class="k">def</span> <span class="nf">get_closest_index_and_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">value</span><span class="p">,</span><span class="n">array</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given an array and a desired value, finds the closest actual value </span>
+<span class="sd">stored in that array, and returns that value, along with its corresponding </span>
+<span class="sd">array index</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">array</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">array</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">index</span><span class="p">,</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">load_eigenvalues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load in known eigenvalues. Must be stored as a numpy archive file,</span>
+<span class="sd">with keys: GSM, SEM, and optionally DEM.  The eigenvalues for each manifold</span>
+<span class="sd">must be 1d arrays, and are assumed to be ordered by increasing energy. The</span>
+<span class="sd">energy difference between the lowest energy ground state and the lowest </span>
+<span class="sd">energy singly-excited state should be set to 0</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">eigval_save_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;eigenvalues.npz&#39;</span><span class="p">)</span>
+        <span class="n">eigval_archive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">eigval_save_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span> <span class="o">=</span> <span class="n">eigval_archive</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span> <span class="o">=</span> <span class="p">[</span><span class="n">eigval_archive</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">load_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load the precalculated dipole overlaps.  The dipole operator must</span>
+<span class="sd">be stored as a .npy file, and must contain a single array, with three indices:</span>
+<span class="sd">(upper manifold eigenfunction, lower manifold eigenfunction, cartesian coordinate).</span>
+<span class="sd">There must be one or two files, one describing the overlap between the ground and </span>
+<span class="sd">singly-excited manifold, and one describing the dipole overlap between the </span>
+<span class="sd">singly-excited and doubly-excited manifold (optional)&quot;&quot;&quot;</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu.npz&#39;</span><span class="p">)</span>
+        <span class="n">file_name_pruned</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_pruned.npz&#39;</span><span class="p">)</span>
+        <span class="n">file_name_bool</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_path</span><span class="p">,</span><span class="s1">&#39;mu_boolean.npz&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mu_archive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name_pruned</span><span class="p">)</span>
+            <span class="n">mu_boolean_archive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name_bool</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM_boolean</span> <span class="o">=</span> <span class="n">mu_boolean_archive</span><span class="p">[</span><span class="s1">&#39;GSM_to_SEM&#39;</span><span class="p">]</span>
+            <span class="n">pruned</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">mu_archive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="n">pruned</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span> <span class="o">=</span> <span class="n">mu_archive</span><span class="p">[</span><span class="s1">&#39;GSM_to_SEM&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">pruned</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM_boolean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;DEM&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span> <span class="o">=</span> <span class="n">mu_archive</span><span class="p">[</span><span class="s1">&#39;SEM_to_DEM&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pruned</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM_boolean</span> <span class="o">=</span> <span class="n">mu_boolean_archive</span><span class="p">[</span><span class="s1">&#39;SEM_to_DEM&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM_boolean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">recenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">new_center</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Substracts new_center from the SEM eigenvalues, and 2*new_center from the DEM.</span>
+<span class="sd">This is the same as changing the frequency-domain center of the pulse, but is more</span>
+<span class="sd">efficient from the perspective of the code  &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_eigenvalues</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">recenter</span>
+        <span class="k">if</span> <span class="s1">&#39;DEM&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_eigenvalues</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">recenter</span>
+
+    <span class="k">def</span> <span class="nf">extend_wavefunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_dict</span><span class="p">,</span><span class="n">pulse_start_ind</span><span class="p">,</span><span class="n">pulse_end_ind</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">check_flag</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perturbative wavefunctions are calculated only during the time where the given pulse</span>
+<span class="sd">is non-zero.  This function extends the wavefunction beyond those bounds by taking all values</span>
+<span class="sd">before the interaction to be zero, and all the values to be constant (in the interaction </span>
+<span class="sd">picture)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">check_flag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">asymptote</span><span class="p">(</span><span class="n">psi_dict</span><span class="p">)</span>
+
+        <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">pulse_end_ind</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">psi</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+
+        <span class="n">total_psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">psi</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+        <span class="n">total_psi</span><span class="p">[:,</span><span class="n">t_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">psi</span>
+        <span class="n">asymptote</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">total_psi</span><span class="p">[:,</span><span class="n">pulse_end_ind</span><span class="p">:]</span> <span class="o">=</span> <span class="n">asymptote</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_psi</span>
+        <span class="k">return</span> <span class="n">psi_dict</span>
+
+    <span class="k">def</span> <span class="nf">asymptote</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that the given wavefunction does in fact asymptote as expected&quot;&quot;&quot;</span>
+        <span class="c1">#Unpack psi_dict</span>
+        <span class="n">psi</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+        <span class="n">psi_trunc</span> <span class="o">=</span> <span class="n">psi</span><span class="p">[:,</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="n">psi_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">psi_trunc</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">max_psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">psi</span><span class="p">),</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">psi_rel_diff</span> <span class="o">=</span> <span class="n">psi_diff</span> <span class="o">/</span> <span class="n">max_psi</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">psi_rel_diff</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">1E-6</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Failed to find asymptote, max rel diff is </span><span class="si">{:.2e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">psi_rel_diff</span><span class="p">))))</span>
+        
+    <span class="c1">### Setting the electric field to be used</span>
+
+    <span class="k">def</span> <span class="nf">set_polarization_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">polarization_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the sequences used for either parallel or crossed pump and probe</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            polarization_list (list): list of four strings, can be &#39;x&#39; or &#39;y&#39;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None: sets the attribute polarization sequence</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">pol_options</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="n">x</span><span class="p">,</span><span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">y</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">polarization_sequence</span> <span class="o">=</span> <span class="p">[</span><span class="n">pol_options</span><span class="p">[</span><span class="n">pol</span><span class="p">]</span> <span class="k">for</span> <span class="n">pol</span> <span class="ow">in</span> <span class="n">polarization_list</span><span class="p">]</span>
+
+    <span class="c1">### Tools for recursively calculating perturbed wavepackets using TDPT</span>
+
+    <span class="k">def</span> <span class="nf">dipole_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">starting_manifold_num</span><span class="p">,</span><span class="n">next_manifold_num</span><span class="p">,</span><span class="n">pulse_number</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the dipole matrix that connects eigenstates from one </span>
+<span class="sd">manifold to the next, using the known dipole moments and the efield </span>
+<span class="sd">polarization, determined by the pulse number.</span>
+<span class="sd">Returns a boolean matrix listing which entries are nonzero (precalculated), </span>
+<span class="sd">and the actual overlap values as the second matrix.&quot;&quot;&quot;</span>
+        <span class="n">pol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polarization_sequence</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
+        <span class="n">upper_manifold_num</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">starting_manifold_num</span><span class="p">,</span><span class="n">next_manifold_num</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">starting_manifold_num</span> <span class="o">-</span> <span class="n">next_manifold_num</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Can only move from manifolds 0 to 1 or 1 to 2&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="k">if</span> <span class="n">upper_manifold_num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">boolean_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM_boolean</span>
+            <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span><span class="p">,</span><span class="n">pol</span><span class="p">,</span><span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">upper_manifold_num</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">boolean_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM_boolean</span>
+            <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tensordot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span><span class="p">,</span><span class="n">pol</span><span class="p">,</span><span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">starting_manifold_num</span> <span class="o">&gt;</span> <span class="n">next_manifold_num</span><span class="p">:</span>
+            <span class="c1"># Take transpose if transition is down rather than up</span>
+            <span class="n">boolean_matrix</span> <span class="o">=</span>  <span class="n">boolean_matrix</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">overlap_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">boolean_matrix</span><span class="p">,</span> <span class="n">overlap_matrix</span>
+
+    <span class="k">def</span> <span class="nf">electric_field_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method determines which molecular transitions will be </span>
+<span class="sd">supported by the electric field.  We assume that the electric field has</span>
+<span class="sd">0 amplitude outside the minimum and maximum frequency immplied by the </span>
+<span class="sd">choice of dt and num_conv_points.  Otherwise we will inadvertently </span>
+<span class="sd">alias transitions onto nonzero electric field amplitudes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">eig0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">eig1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">diff10</span> <span class="o">=</span> <span class="n">eig1</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">-</span> <span class="n">eig0</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+
+        <span class="c1"># The only transitions allowed by the electric field shape are</span>
+        <span class="n">inds_allowed10</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">diff10</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">efield_w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">diff10</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">efield_w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">mask10</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">diff10</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+        <span class="n">mask10</span><span class="p">[</span><span class="n">inds_allowed10</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM_boolean</span> <span class="o">*=</span> <span class="n">mask10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu_GSM_to_SEM</span> <span class="o">*=</span> <span class="n">mask10</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s1">&#39;DEM&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifolds</span><span class="p">:</span>
+            <span class="n">eig2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">diff21</span> <span class="o">=</span> <span class="n">eig2</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">-</span> <span class="n">eig1</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+            <span class="n">inds_allowed21</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">diff21</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">efield_w</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">diff21</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">efield_w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">mask21</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">diff21</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
+            <span class="n">mask21</span><span class="p">[</span><span class="n">inds_allowed21</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM_boolean</span> <span class="o">*=</span> <span class="n">mask21</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_SEM_to_DEM</span> <span class="o">*=</span> <span class="n">mask21</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">mask_dipole_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">boolean_matrix</span><span class="p">,</span><span class="n">overlap_matrix</span><span class="p">,</span>
+                           <span class="n">starting_manifold_mask</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">next_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Takes as input the boolean_matrix and the overlap matrix that it </span>
+<span class="sd">corresponds to. Also requires the starting manifold mask, which specifies</span>
+<span class="sd">which states have non-zero amplitude, given the signal tolerance requested.</span>
+<span class="sd">Trims off unnecessary starting elements, and ending elements. If </span>
+<span class="sd">next_manifold_mask is None, then the masking is done automatically</span>
+<span class="sd">based upon which overlap elements are nonzero. If next_manifold_mask is</span>
+<span class="sd">a 1D numpy boolean array, it is used as the mask for next manifold.&quot;&quot;&quot;</span>
+        <span class="n">boolean_matrix</span> <span class="o">=</span> <span class="n">boolean_matrix</span><span class="p">[:,</span><span class="n">starting_manifold_mask</span><span class="p">]</span>
+        <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="n">overlap_matrix</span><span class="p">[:,</span><span class="n">starting_manifold_mask</span><span class="p">]</span>
+
+        <span class="c1">#Determine the nonzero elements of the new psi, in the</span>
+        <span class="c1">#eigenenergy basis, n_nonzero</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">next_manifold_mask</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+            <span class="n">n_nonzero</span> <span class="o">=</span> <span class="n">next_manifold_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">boolean_matrix</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="n">overlap_matrix</span><span class="p">[</span><span class="n">n_nonzero</span><span class="p">,:]</span>
+
+        <span class="k">return</span> <span class="n">overlap_matrix</span><span class="p">,</span> <span class="n">n_nonzero</span>
+
+    <span class="k">def</span> <span class="nf">next_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="n">manifold_change</span><span class="p">,</span>
+                   <span class="o">*</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                   <span class="n">pulse_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This function connects psi^(n) to psi^(n+1) using a DFT convolution algorithm.</span>
+<span class="sd">psi_in_dict is the input wavefunction dictionary</span>
+<span class="sd">manifold_change is either +/-1 (up or down)</span>
+<span class="sd">pulse_time is the arrival time of the pulse</span>
+<span class="sd">gamma is the optical dephasing (only use with final interaction)</span>
+<span class="sd">new_manifold_mask is optional - define the states to be considered in the next manifold</span>
+<span class="sd">pulse_number - 0,1,2,... (for pump-probe experiments, either 0 (pump) or 1 (probe))</span>
+<span class="sd">can also be set to &#39;impulsive&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
+        <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
+
+        <span class="n">pulse_start_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span>
+        <span class="n">pulse_end_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span>
+
+        <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">pulse_end_ind</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">t_slice</span><span class="p">]</span>
+        
+        <span class="n">psi_in</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="n">t_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="n">m_nonzero</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        <span class="n">starting_manifold_num</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+        <span class="n">next_manifold_num</span> <span class="o">=</span> <span class="n">starting_manifold_num</span> <span class="o">+</span> <span class="n">manifold_change</span>
+
+        <span class="n">exp_factor_starting</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">starting_manifold_num</span><span class="p">][</span><span class="n">m_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">])</span>
+
+        <span class="n">psi_in</span> <span class="o">*=</span> <span class="n">exp_factor_starting</span>
+        
+        <span class="n">boolean_matrix</span><span class="p">,</span> <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_matrix</span><span class="p">(</span><span class="n">starting_manifold_num</span><span class="p">,</span><span class="n">next_manifold_num</span><span class="p">,</span>
+                                                            <span class="n">pulse_number</span><span class="p">)</span>
+
+        <span class="n">overlap_matrix</span><span class="p">,</span> <span class="n">n_nonzero</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_dipole_matrix</span><span class="p">(</span><span class="n">boolean_matrix</span><span class="p">,</span><span class="n">overlap_matrix</span><span class="p">,</span><span class="n">m_nonzero</span><span class="p">,</span>
+                                                 <span class="n">next_manifold_mask</span> <span class="o">=</span> <span class="n">new_manifold_mask</span><span class="p">)</span>
+
+        <span class="n">psi</span> <span class="o">=</span> <span class="n">overlap_matrix</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">psi_in</span><span class="p">)</span>
+        
+        <span class="n">exp_factor1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">next_manifold_num</span><span class="p">][</span><span class="n">n_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">gamma</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">exp_factor1</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">t</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:])</span>
+
+        <span class="n">psi</span> <span class="o">*=</span> <span class="n">exp_factor1</span>
+
+        <span class="k">if</span> <span class="n">pulse_number</span> <span class="o">==</span> <span class="s1">&#39;impulsive&#39;</span><span class="p">:</span>
+            <span class="n">heavi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">heaviside</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">pulse_time</span><span class="p">,</span><span class="mf">0.5</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+            <span class="n">psi</span> <span class="o">=</span> <span class="n">psi</span><span class="p">[:,</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">psi</span> <span class="o">=</span> <span class="n">psi</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">heavi</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">next_manifold_num</span> <span class="o">&gt;</span> <span class="n">starting_manifold_num</span><span class="p">:</span>
+                <span class="n">efield</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">efields</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">efield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">efields</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">])</span>
+            <span class="n">psi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fft_convolve2</span><span class="p">(</span><span class="n">psi</span> <span class="o">*</span> <span class="n">efield</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span><span class="n">d</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="n">psi</span> <span class="o">*=</span> <span class="mi">1</span><span class="n">j</span> <span class="c1"># i/hbar Straight from perturbation theory</span>
+
+        <span class="n">psi_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">psi</span><span class="p">,</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">n_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">next_manifold_num</span><span class="p">}</span>
+
+        <span class="n">psi_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extend_wavefunction</span><span class="p">(</span><span class="n">psi_dict</span><span class="p">,</span><span class="n">pulse_start_ind</span><span class="p">,</span><span class="n">pulse_end_ind</span><span class="p">,</span><span class="n">check_flag</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">psi_dict</span>
+            
+    <span class="k">def</span> <span class="nf">up</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method connects psi^(n) to psi^(n+1) where the next order psi</span>
+<span class="sd">        is one manifold above the current manifold.</span>
+<span class="sd">        The only difference between the up and down operators is whether the </span>
+<span class="sd">        next manifold is 1 above, or 1 below, the starting manifold. &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_order</span><span class="p">(</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
+                               <span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">new_manifold_mask</span><span class="p">,</span>
+                               <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">down</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method connects psi^(n) to psi^(n+1) where the next order psi</span>
+<span class="sd">        is one manifold below the current manifold.</span>
+<span class="sd">        The only difference between the up and down operators is whether the </span>
+<span class="sd">        next manifold is 1 above, or 1 below, the starting manifold. &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_order</span><span class="p">(</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">gamma</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span>
+                               <span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">new_manifold_mask</span><span class="p">,</span>
+                               <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+
+    <span class="c1">### Tools for taking the expectation value of the dipole operator with perturbed wavepackets</span>
+
+    <span class="k">def</span> <span class="nf">psi_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wavefunction dictionaries do not store zero elements. This function</span>
+<span class="sd">uncompresses the wavefunction, restoring all of the zero elements &quot;&quot;&quot;</span>
+        <span class="n">manifold</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+        <span class="n">full_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eigenvalues</span><span class="p">[</span><span class="n">manifold</span><span class="p">]</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">full_psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">full_length</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+        <span class="n">n_nonzero</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        <span class="n">full_psi</span><span class="p">[</span><span class="n">n_nonzero</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">psi_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">full_psi</span>
+    
+    <span class="k">def</span> <span class="nf">dipole_down</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">psi_in_dict</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This method is similar to the method down, but does not</span>
+<span class="sd">involve the electric field shape or convolutions. It is the action of </span>
+<span class="sd">the dipole operator on a ket without TDPT effects.  It also includes</span>
+<span class="sd">the dot product of the final electric field polarization vector.&quot;&quot;&quot;</span>
+        <span class="n">psi_in</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+        <span class="n">m_nonzero</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        <span class="n">starting_manifold_num</span> <span class="o">=</span> <span class="n">psi_in_dict</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+        <span class="n">next_manifold_num</span> <span class="o">=</span> <span class="n">starting_manifold_num</span> <span class="o">-</span> <span class="mi">1</span>
+        
+        <span class="c1"># This function is always used as the final interaction to</span>
+        <span class="c1"># produce the polarization field, which is a vector quantity</span>
+        <span class="c1"># However we assume that we will calculate a signal, which</span>
+        <span class="c1"># invovles the dot product of the polarization field with the</span>
+        <span class="c1"># local oscillator vector. We do this now to avoid carrying</span>
+        <span class="c1"># around the cartesian coordinates of the polarization field</span>
+        
+        <span class="n">boolean_matrix</span><span class="p">,</span> <span class="n">overlap_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_matrix</span><span class="p">(</span><span class="n">starting_manifold_num</span><span class="p">,</span><span class="n">next_manifold_num</span><span class="p">,</span>
+                                                            <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+
+        <span class="n">overlap_matrix</span><span class="p">,</span> <span class="n">n_nonzero</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_dipole_matrix</span><span class="p">(</span><span class="n">boolean_matrix</span><span class="p">,</span><span class="n">overlap_matrix</span><span class="p">,</span><span class="n">m_nonzero</span><span class="p">,</span>
+                                                 <span class="n">next_manifold_mask</span> <span class="o">=</span> <span class="n">new_manifold_mask</span><span class="p">)</span>
+
+        <span class="n">psi</span> <span class="o">=</span> <span class="n">overlap_matrix</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">psi_in</span><span class="p">)</span>
+
+        <span class="n">psi_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">psi</span><span class="p">,</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">n_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">next_manifold_num</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">psi_dict</span>
+
+    <span class="k">def</span> <span class="nf">dipole_expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bra_dict_original</span><span class="p">,</span><span class="n">ket_dict_original</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given two wavefunctions, this computes the expectation value of the two with respect </span>
+<span class="sd">to the dipole operator.  Both wavefunctions are taken to be kets, and the one named &#39;bra&#39; is</span>
+<span class="sd">converted to a bra by taking the complex conjugate.&quot;&quot;&quot;</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
+        <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
+
+        <span class="n">pulse_start_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span>
+        <span class="n">gamma_end_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">6.91</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c1"># The signal is zero before the final pulse arrives, and persists</span>
+        <span class="c1"># until it decays. Therefore we avoid taking the sum at times</span>
+        <span class="c1"># where the signal is zero. This is captured by t_slice</span>
+        <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">gamma_end_ind</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">bra_in</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="n">t_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">ket_in</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="n">t_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="n">manifold1_num</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+        <span class="n">manifold2_num</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+
+        <span class="n">bra_nonzero</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        <span class="n">ket_nonzero</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        
+        <span class="n">exp_factor_bra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">manifold1_num</span><span class="p">][</span><span class="n">bra_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">])</span>
+        <span class="n">exp_factor_ket</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">manifold2_num</span><span class="p">][</span><span class="n">ket_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">])</span>
+        
+        <span class="n">bra_in</span> <span class="o">*=</span> <span class="n">exp_factor_bra</span>
+        <span class="n">ket_in</span> <span class="o">*=</span> <span class="n">exp_factor_ket</span>
+
+        <span class="n">bra_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">bra_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">manifold1_num</span><span class="p">,</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">bra_in</span><span class="p">}</span>
+        <span class="n">ket_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">ket_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">manifold2_num</span><span class="p">,</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">ket_in</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">manifold1_num</span> <span class="o">-</span> <span class="n">manifold2_num</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Dipole only connects manifolds 0 to 1 or 1 to 2&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">manifold1_num</span> <span class="o">&gt;</span> <span class="n">manifold2_num</span><span class="p">:</span>
+            <span class="n">bra_new_mask</span> <span class="o">=</span> <span class="n">ket_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+            <span class="n">bra_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_down</span><span class="p">(</span><span class="n">bra_dict</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">bra_new_mask</span><span class="p">,</span>
+                                        <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ket_new_mask</span> <span class="o">=</span> <span class="n">bra_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+            <span class="n">ket_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_down</span><span class="p">(</span><span class="n">ket_dict</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">ket_new_mask</span><span class="p">,</span>
+                                        <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+
+        <span class="n">bra</span> <span class="o">=</span> <span class="n">bra_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+        <span class="n">ket</span> <span class="o">=</span> <span class="n">ket_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+
+        <span class="n">exp_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">bra</span><span class="p">)</span> <span class="o">*</span> <span class="n">ket</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="c1"># Initialize return array with zeros</span>
+        <span class="n">ret_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+        <span class="c1"># set non-zero values using t_slice</span>
+        <span class="n">ret_val</span><span class="p">[</span><span class="n">t_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp_val</span>
+        <span class="k">return</span> <span class="n">ret_val</span>
+
+    <span class="k">def</span> <span class="nf">integrated_dipole_expectation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bra_dict_original</span><span class="p">,</span><span class="n">ket_dict_original</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">pulse_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given two wavefunctions, this computes the expectation value of the two with respect </span>
+<span class="sd">to the dipole operator.  Both wavefunctions are taken to be kets, and the one named &#39;bra&#39; is</span>
+<span class="sd">converted to a bra by taking the complex conjugate.  This assumes that the signal will be</span>
+<span class="sd">frequency integrated.&quot;&quot;&quot;</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">pulse_number</span><span class="p">]</span>
+        <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
+
+        <span class="n">pulse_start_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span>
+        <span class="n">pulse_end_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span>
+        
+        <span class="c1"># The signal is zero before the final pulse arrives, and persists</span>
+        <span class="c1"># until it decays. However, if no frequency information is</span>
+        <span class="c1"># required, fewer time points are needed for this t_slice</span>
+        <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">pulse_end_ind</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">bra_in</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="n">t_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">ket_in</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">][:,</span><span class="n">t_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        
+        <span class="n">manifold1_num</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+        <span class="n">manifold2_num</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">]</span>
+
+        <span class="n">bra_nonzero</span> <span class="o">=</span> <span class="n">bra_dict_original</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        <span class="n">ket_nonzero</span> <span class="o">=</span> <span class="n">ket_dict_original</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+        
+        <span class="n">exp_factor_bra</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">manifold1_num</span><span class="p">][</span><span class="n">bra_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">])</span>
+        <span class="n">exp_factor_ket</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unitary</span><span class="p">[</span><span class="n">manifold2_num</span><span class="p">][</span><span class="n">ket_nonzero</span><span class="p">,</span><span class="n">t_slice</span><span class="p">])</span>
+        
+        <span class="n">bra_in</span> <span class="o">*=</span> <span class="n">exp_factor_bra</span>
+        <span class="n">ket_in</span> <span class="o">*=</span> <span class="n">exp_factor_ket</span>
+
+        <span class="n">bra_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">bra_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">manifold1_num</span><span class="p">,</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">bra_in</span><span class="p">}</span>
+        <span class="n">ket_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">:</span><span class="n">ket_nonzero</span><span class="p">,</span><span class="s1">&#39;manifold_num&#39;</span><span class="p">:</span><span class="n">manifold2_num</span><span class="p">,</span><span class="s1">&#39;psi&#39;</span><span class="p">:</span><span class="n">ket_in</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">manifold1_num</span> <span class="o">-</span> <span class="n">manifold2_num</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Dipole only connects manifolds 0 to 1 or 1 to 2&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">manifold1_num</span> <span class="o">&gt;</span> <span class="n">manifold2_num</span><span class="p">:</span>
+            <span class="n">bra_new_mask</span> <span class="o">=</span> <span class="n">ket_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+            <span class="n">bra_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_down</span><span class="p">(</span><span class="n">bra_dict</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">bra_new_mask</span><span class="p">,</span>
+                                        <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ket_new_mask</span> <span class="o">=</span> <span class="n">bra_dict</span><span class="p">[</span><span class="s1">&#39;bool_mask&#39;</span><span class="p">]</span>
+            <span class="n">ket_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dipole_down</span><span class="p">(</span><span class="n">ket_dict</span><span class="p">,</span><span class="n">new_manifold_mask</span> <span class="o">=</span> <span class="n">ket_new_mask</span><span class="p">,</span>
+                                        <span class="n">pulse_number</span> <span class="o">=</span> <span class="n">pulse_number</span><span class="p">)</span>
+
+        <span class="n">bra</span> <span class="o">=</span> <span class="n">bra_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+        <span class="n">ket</span> <span class="o">=</span> <span class="n">ket_dict</span><span class="p">[</span><span class="s1">&#39;psi&#39;</span><span class="p">]</span>
+
+        <span class="n">exp_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">bra</span><span class="p">)</span> <span class="o">*</span> <span class="n">ket</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">exp_val</span>
+
+    <span class="k">def</span> <span class="nf">polarization_to_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">P_of_t_in</span><span class="p">,</span><span class="o">*</span><span class="p">,</span><span class="n">return_polarization</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">local_oscillator_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This function generates a frequency-resolved signal from a polarization field</span>
+<span class="sd">local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields&quot;&quot;&quot;</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">local_oscillator_number</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">exp_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">P_of_t_in</span> <span class="o">*=</span> <span class="n">exp_factor</span>
+        <span class="n">P_of_t</span> <span class="o">=</span> <span class="n">P_of_t_in</span>
+        <span class="k">if</span> <span class="n">return_polarization</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">P_of_t</span>
+
+        <span class="k">if</span> <span class="n">local_oscillator_number</span> <span class="o">==</span> <span class="s1">&#39;impulsive&#39;</span><span class="p">:</span>
+            <span class="n">efield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="o">*</span><span class="p">(</span><span class="n">pulse_time</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="n">pulse_time</span><span class="p">))</span>
+
+            <span class="n">pulse_start_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span>
+            <span class="n">pulse_end_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span>
+
+            <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">pulse_end_ind</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">efield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;complex&#39;</span><span class="p">)</span>
+            <span class="n">efield</span><span class="p">[</span><span class="n">t_slice</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">efields</span><span class="p">[</span><span class="n">local_oscillator_number</span><span class="p">]</span>
+            <span class="n">efield</span> <span class="o">=</span> <span class="n">fftshift</span><span class="p">(</span><span class="n">ifft</span><span class="p">(</span><span class="n">ifftshift</span><span class="p">(</span><span class="n">efield</span><span class="p">)))</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">P_of_t</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">P_of_t</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span><span class="p">:</span>
+            <span class="n">P_of_t</span> <span class="o">=</span> <span class="n">P_of_t</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">efield</span> <span class="o">=</span> <span class="n">efield</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">P_of_t</span><span class="p">)]</span>
+
+        <span class="n">P_of_w</span> <span class="o">=</span> <span class="n">fftshift</span><span class="p">(</span><span class="n">ifft</span><span class="p">(</span><span class="n">ifftshift</span><span class="p">(</span><span class="n">P_of_t</span><span class="p">)))</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">P_of_t</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">P_of_w</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">efield</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">signal</span>
+
+    <span class="k">def</span> <span class="nf">polarization_to_integrated_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">P_of_t</span><span class="p">,</span><span class="o">*</span><span class="p">,</span>
+                                          <span class="n">local_oscillator_number</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This function generates a frequency-integrated signal from a polarization field</span>
+<span class="sd">local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields</span>
+<span class="sd">&quot;&quot;&quot;</span>
+        <span class="n">pulse_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_times</span><span class="p">[</span><span class="n">local_oscillator_number</span><span class="p">]</span>
+        <span class="n">pulse_time_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_time</span><span class="p">))</span>
+
+        <span class="n">pulse_start_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span>
+        <span class="n">pulse_end_ind</span> <span class="o">=</span> <span class="n">pulse_time_ind</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">%</span><span class="mi">2</span>
+
+        <span class="n">t_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">pulse_start_ind</span><span class="p">,</span> <span class="n">pulse_end_ind</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">t_slice</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">exp_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+            <span class="n">P_of_t</span> <span class="o">*=</span> <span class="n">exp_factor</span>
+
+        <span class="k">if</span> <span class="n">local_oscillator_number</span> <span class="o">==</span> <span class="s1">&#39;impulsive&#39;</span><span class="p">:</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">P_of_t</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">efield</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">efields</span><span class="p">[</span><span class="n">local_oscillator_number</span><span class="p">]</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">efield</span><span class="p">)</span><span class="o">*</span><span class="n">P_of_t</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ultrafastultrafast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Peter A. Rose and Jacob J. Krich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

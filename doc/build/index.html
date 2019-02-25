@@ -1,0 +1,547 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome to ultrafastultrafast’s documentation! &#8212; ultrafastultrafast 0.1.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-ultrafastultrafast-s-documentation">
+<h1>Welcome to ultrafastultrafast’s documentation!<a class="headerlink" href="#welcome-to-ultrafastultrafast-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This code is based upon the algorithm Ultrafast Ultrafast
+(<span class="math">\(\text{UF}^2\)</span>), detailed in <a class="reference external" href="http://arxiv.org/abs/1902.07854">http://arxiv.org/abs/1902.07854</a>.
+<span class="math">\(\text{UF}^2\)</span> calculates the perturbative wavepackets needed to
+calculate n-wave mixing signals.  It works with closed systems described
+by the Hamiltonian <span class="math">\(H_0\)</span>, and calculates perturbations due to
+ultrafast optical pulses in the dipole approximation, so that the total
+Hamiltonian is</p>
+<div class="math">
+\[H = H_0 - \boldsymbol{\mu} \cdot \boldsymbol{E}(t)\]</div>
+<p>where <span class="math">\(\boldsymbol{\mu}\)</span> is the dipole operator.  Bold symbols represent
+cartesian vectors in the molecular frame, where for example</p>
+<div class="math">
+\[\boldsymbol{\mu} = \mu_x\boldsymbol{x} + \mu_y\boldsymbol{y} + \mu_z\boldsymbol{z}\]</div>
+<p>In order to function, <span class="math">\(\text{UF}^2\)</span> requires that the eigenvalues
+<span class="math">\(\hbar\omega_i\)</span> of <span class="math">\(H_0\)</span> are known</p>
+<div class="math">
+\[H_0|i\rangle = \hbar\omega_i|i\rangle\]</div>
+<p>and that the dipole operator is known in the eigenbasis of <span class="math">\(H_0\)</span></p>
+<div class="math">
+\[\boldsymbol{\mu}_{ij} = \langle i|\boldsymbol{\mu}|j\rangle\]</div>
+<p>In order to use <span class="math">\(\text{UF}^2\)</span>, you must make a folder somewhere on
+your computer, and place in that folder two files - eigenvalues.npz and
+mu.npz.  Both files must be numpy archives created with numpy’s savez
+function.  The contents of the files are as follows</p>
+<p>eigenvalues.npz contains up to three 1d numpy arrays with keys:</p>
+<ul class="simple">
+<li>‘GSM’ - sorted list of eigenvalues in the ground state manifold</li>
+<li>‘SEM’ - sorted list of eigenvalues in the singly excited manifold</li>
+<li>‘DEM’ - (optional) sorted list of eigenvalues in the doubly excited manifold</li>
+</ul>
+<p>(Note: 4-wave mixing signals, to lowest order in time dependent perturbation
+theory (TDPT) can probe at most these three excitation manifolds.  So far
+this code has only been written to support up to the doubly excited manifold.
+It would be straightforward to extend functionality to higher excitation
+manifolds (e.g., triply excited, etc.))</p>
+<p>mu.npz contains up to two 3d numpy arrays with keys:</p>
+<ul class="simple">
+<li>‘GSM_to_SEM’ - dipole operator connecting the ground and singly excited
+manifolds.  Indices are [i,j,k] where i are the indices of the singly
+excited manifold, j are the indices of the ground state manifold, and k is
+the cartesian index where <span class="math">\(k = {0,1,2}\)</span> corresponds to
+<span class="math">\(k={x,y,z}\)</span></li>
+<li>‘SEM_to_DEM’ - dipole operator connecting the singly and doubly excited
+manifolds.  Indices are [i,j,k] where i are the indices of the doubly
+excited manifold, j are the indices of the singly excited manifold, and k is
+the cartesian index where <span class="math">\(k = {0,1,2}\)</span> corresponds to
+<span class="math">\(k={x,y,z}\)</span></li>
+</ul>
+<div class="section" id="convolutions">
+<h2>Convolutions<a class="headerlink" href="#convolutions" title="Permalink to this headline">¶</a></h2>
+<p>In the paper we show that an operator <span class="math">\(K_{j^{(*)}}\)</span> can be used to
+iteratively calculate all of the perturbative wavepackets needed for a given
+spectroscopic signal.  <span class="math">\(K_{j}\)</span> describes an optical excitation of the
+ket by the jth pulse, whereas <span class="math">\(K_{j^*}\)</span> describes an optical
+de-excitation of the ket by the jth pulse.  These operators are implemented
+as methods ‘up’ and ‘down’, respectively, in the primary class of
+<span class="math">\(\text{UF}^2\)</span>, which is documented here</p>
+<div class="toctree-wrapper compound">
+</div>
+<span class="target" id="module-ultrafastultrafast"></span><dl class="class">
+<dt id="ultrafastultrafast.Wavepackets">
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.</code><code class="descname">Wavepackets</code><span class="sig-paren">(</span><em>parameter_file_path</em>, <em>*</em>, <em>num_conv_points=138</em>, <em>dt=0.1</em>, <em>initial_state=0</em>, <em>total_num_time_points=2000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class is designed to calculate perturbative wavepackets in the
+light-matter interaction given the eigenvalues of the unperturbed
+hamiltonian and the material dipole operator evaluated in the
+eigenbasis of the unperturbed hamiltonian.</p>
+<blockquote>
+<div>Attributes:</div></blockquote>
+<dl class="method">
+<dt id="ultrafastultrafast.Wavepackets.dipole_expectation">
+<code class="descname">dipole_expectation</code><span class="sig-paren">(</span><em>bra_dict_original</em>, <em>ket_dict_original</em>, <em>*</em>, <em>pulse_number=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.dipole_expectation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.dipole_expectation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given two wavefunctions, this computes the expectation value of the two with respect
+to the dipole operator.  Both wavefunctions are taken to be kets, and the one named ‘bra’ is
+converted to a bra by taking the complex conjugate.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.Wavepackets.down">
+<code class="descname">down</code><span class="sig-paren">(</span><em>psi_in_dict</em>, <em>*</em>, <em>gamma=0</em>, <em>new_manifold_mask=None</em>, <em>pulse_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.down"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.down" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This method connects psi_p to psi_pj^* where the next order psi</dt>
+<dd>is one manifold below the current manifold.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
+<li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
+‘impulsive’</li>
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – optical dephasing (only use with final interaction)</li>
+<li><strong>new_manifold_mask</strong> (<em>np.ndarray</em>) – optional - define the states to be considered
+in the next manifold</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.Wavepackets.next_order">
+<code class="descname">next_order</code><span class="sig-paren">(</span><em>psi_in_dict</em>, <em>manifold_change</em>, <em>*</em>, <em>gamma=0</em>, <em>new_manifold_mask=None</em>, <em>pulse_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.next_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.next_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function connects psi^(n) to psi^(n+1) using a DFT convolution algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
+<li><strong>manifold_change</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – is either +/-1 (up or down)</li>
+<li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
+‘impulsive’</li>
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – optical dephasing (only use with final interaction)</li>
+<li><strong>new_manifold_mask</strong> (<em>np.ndarray</em>) – optional - define the states to be considered
+in the next manifold</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.Wavepackets.polarization_to_signal">
+<code class="descname">polarization_to_signal</code><span class="sig-paren">(</span><em>P_of_t_in</em>, <em>*</em>, <em>return_polarization=False</em>, <em>local_oscillator_number=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.polarization_to_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.polarization_to_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generates a frequency-resolved signal from a polarization field
+local_oscillator_number - usually the local oscillator will be the last pulse in the list self.efields</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.Wavepackets.up">
+<code class="descname">up</code><span class="sig-paren">(</span><em>psi_in_dict</em>, <em>*</em>, <em>gamma=0</em>, <em>new_manifold_mask=None</em>, <em>pulse_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#Wavepackets.up"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.Wavepackets.up" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>This method connects psi_p to psi_pj where the next order psi</dt>
+<dd>is one manifold above the current manifold.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>psi_in_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – input wavefunction dictionary</li>
+<li><strong>pulse_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – index of optical pulse (0,1,2,…) can also be set to
+‘impulsive’</li>
+<li><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – optical dephasing (only use with final interaction)</li>
+<li><strong>new_manifold_mask</strong> (<em>np.ndarray</em>) – optional - define the states to be considered
+in the next manifold</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<p>We show in our paper that <span class="math">\(K_{j^{(*)}}\)</span> is essentially a weighted sum
+over dipole matrix elements, followed by a convolution with the heaviside
+step function <span class="math">\(\theta\)</span>.  We implement this convolution using the FFT
+and the convolution theorem.  In order to get maximum performance, we rely
+on the FFTW algorithm.  The class that defines the convolution operation is
+documented here</p>
+<dl class="class">
+<dt id="ultrafastultrafast.core.HeavisideConvolve">
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.core.</code><code class="descname">HeavisideConvolve</code><span class="sig-paren">(</span><em>arr_size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class calculates the discrete convolution of an array with the heaviside step function</p>
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.size">
+<code class="descname">size</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.size" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> – number of linear convolution points</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.theta_fft">
+<code class="descname">theta_fft</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.theta_fft" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>numpy.ndarray</em> – discrete fourier transform of the step function</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.a">
+<code class="descname">a</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.a" title="Permalink to this definition">¶</a></dt>
+<dd><p>aligned array of zeros for use with the fftw algorithm</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.b">
+<code class="descname">b</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.b" title="Permalink to this definition">¶</a></dt>
+<dd><p>empty aligned array for use with the fftw algorithm</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.c">
+<code class="descname">c</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.c" title="Permalink to this definition">¶</a></dt>
+<dd><p>empty aligned array for use with the fftw algorithm</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.fft">
+<code class="descname">fft</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.fft" title="Permalink to this definition">¶</a></dt>
+<dd><p>method for calculating the FFT of a (stores the result in b)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ultrafastultrafast.HeavisideConvolve.ifft">
+<code class="descname">ifft</code><a class="headerlink" href="#ultrafastultrafast.HeavisideConvolve.ifft" title="Permalink to this definition">¶</a></dt>
+<dd><p>method for calculating the IFFT of b (stores the result in c)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.core.HeavisideConvolve.fft_convolve">
+<code class="descname">fft_convolve</code><span class="sig-paren">(</span><em>arr</em>, <em>*</em>, <em>d=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve.fft_convolve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve.fft_convolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method calculates the linear convolution of an input with the heaviside step function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>arr</strong> (<em>numpy.ndarray</em>) – 1d array of input function values f(x)</li>
+<li><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – spacing size of grid f(x) is evaluated on, dx</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">linear convolution of arr with heaviside step function</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.core.HeavisideConvolve.fft_convolve2">
+<code class="descname">fft_convolve2</code><span class="sig-paren">(</span><em>arr</em>, <em>*</em>, <em>d=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve.fft_convolve2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve.fft_convolve2" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method loops over fft_convolve in order to perform the convolution of input array with the heaviside step function along the second axis of arr</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>arr</strong> (<em>numpy.ndarray</em>) – 2d array of input function values f_i(x),
+where i is the 1st index of the array</li>
+<li><strong>d</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – spacing size of grid f_i(x) is evaluated on, dx</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2d array of linear convolution of arr with heaviside step function along the second axis of arr</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.core.HeavisideConvolve.heaviside_fft">
+<code class="descname">heaviside_fft</code><span class="sig-paren">(</span><em>*</em>, <em>value_at_zero=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/core.html#HeavisideConvolve.heaviside_fft"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.core.HeavisideConvolve.heaviside_fft" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method calculates the FFT of the heaviside step function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value_at_zero</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – value of the heaviside step function at x = 0</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the FFT of the heaviside step function</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">numpy.ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pruning-dipole-operator">
+<h2>Pruning Dipole Operator<a class="headerlink" href="#pruning-dipole-operator" title="Permalink to this headline">¶</a></h2>
+<p>This is an optional class which can be used to trim (or prune) the dipole
+operator down to the fewest possible terms that are needed to resolve the
+spectrosocopic signal.  Given a relative tolerance epsilon, this class will
+save two new files to the folder being used: mu_pruned.npz and
+mu_boolean.npz.  mu_pruned.npz has all unnecessary elements of the dipole
+operator set to 0, and mu_boolean.npz contains 1’s where the dipole
+operator is non-zero, and 0’s everywhere else.  This pruning is recommended
+for systems where the dipole operator has many elements that are close to
+0 and do not contribute to the signal appreciably.  If you use this class
+to prune the dipole operator, keep in mind that your choice of epsilon is
+a convergence parameter for the signals you are ultimately calculating.</p>
+<dl class="class">
+<dt id="ultrafastultrafast.DipolePruning">
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.</code><code class="descname">DipolePruning</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class takes the dipole operator, mu, which must be expressed in
+the eigenbasis of the system hamiltonian and uses Bessel’s
+inequality to determine the smallest number of states needed to
+correctly resolve mu, to the given tolerance.  It expects a file
+mu.npz in the folder ‘file_path’, with archive keys ‘mu_GSM_to_SEM’ and,
+optionally, ‘mu_SEM_to_DEM’.  Each key must return a 3d numpy array with
+indices [i,j,k], where i and j are indices of the eigenvalues of the system
+hamiltonian, and k is an index 0,1,2 cooresponding to cartesian coordinates
+x,y,z.</p>
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.calculate_boolean_mu">
+<code class="descname">calculate_boolean_mu</code><span class="sig-paren">(</span><em>overlap_matrix</em>, <em>*</em>, <em>rel_tol=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.calculate_boolean_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.calculate_boolean_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses Bessel’s inequality to find the minimum number of dipole
+matrix elements needed to correctly resolve the dipole operator to the
+given tolerance.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>overlap_matrix (np.ndarray) <span class="classifier-delimiter">:</span> <span class="classifier">3d-array of dipole matrix elements</span></dt>
+<dd>[i,j,k] where i,j are eigenstates and k is a cartesian
+coordinate.</dd>
+<dt>rel_tol (float) <span class="classifier-delimiter">:</span> <span class="classifier">relative tolerance for resolving the dipole</span></dt>
+<dd>operator mu.</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.load_mu">
+<code class="descname">load_mu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.load_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.load_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the precalculated dipole overlaps.  The dipole operator must
+be stored as a .npz file, and must contain a single array, with three
+indices: (upper manifold eigenfunction, lower manifold eigenfunction,
+cartesian coordinate).  There must be one or two files, one describing the
+overlap between the ground and singly-excited manifold, and one describing
+the dipole overlap between the singly-excited and doubly-excited manifold
+(optional)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.DipolePruning.save_boolean_mu">
+<code class="descname">save_boolean_mu</code><span class="sig-paren">(</span><em>*</em>, <em>rel_tol=0.001</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/dipole_pruning.html#DipolePruning.save_boolean_mu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.DipolePruning.save_boolean_mu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and save the boolean masks for the dipole matrices
+at the given tolerance. Files created by this function are mu_pruned.npz
+and mu_boolean.npz.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>rel_tol (float) <span class="classifier-delimiter">:</span> <span class="classifier">relative tolerance for resolving the dipole</span></dt>
+<dd>operator mu.  Default value of 0.001 has been found to work
+well with vibronic systems to give convergence of the
+Transient Absorption signal of better than 1%.</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="signals">
+<h2>Signals<a class="headerlink" href="#signals" title="Permalink to this headline">¶</a></h2>
+<p>We include several exmaples of how to use <span class="math">\(\text{UF}^2\)</span> to calculate
+n-wave mixing signals in the module signals.  For example, we provide a
+class for calculating the Transient Absorption Signal documented here</p>
+<dl class="class">
+<dt id="ultrafastultrafast.signals.TransientAbsorption">
+<em class="property">class </em><code class="descclassname">ultrafastultrafast.signals.</code><code class="descname">TransientAbsorption</code><span class="sig-paren">(</span><em>parameter_file_path</em>, <em>*</em>, <em>num_conv_points=138</em>, <em>initial_state=0</em>, <em>dt=0.1</em>, <em>total_num_time_points=2000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class uses WavepacketBuilder to calculate the perturbative
+wavepackets needed to calculate the frequency-resolved pump-probe spectrum</p>
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.calculate_overlap_wavepackets">
+<code class="descname">calculate_overlap_wavepackets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.calculate_overlap_wavepackets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.calculate_overlap_wavepackets" title="Permalink to this definition">¶</a></dt>
+<dd><p>These diagrams only contribute when the two pulses either overlap,
+or when the probe comes before the pump</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.calculate_pump_probe_spectra_vs_delay_time">
+<code class="descname">calculate_pump_probe_spectra_vs_delay_time</code><span class="sig-paren">(</span><em>delay_times</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.calculate_pump_probe_spectra_vs_delay_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.calculate_pump_probe_spectra_vs_delay_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.calculate_pump_probe_spectrum">
+<code class="descname">calculate_pump_probe_spectrum</code><span class="sig-paren">(</span><em>delay_time</em>, <em>*</em>, <em>recalculate_pump_wavepackets=True</em>, <em>local_oscillator_number=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.calculate_pump_probe_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.calculate_pump_probe_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the pump-probe spectrum for the delay_time specified.
+Boolean arguments:</p>
+<p>recalculate_pump_wavepackets - must be set to True if any aspect of the electric
+field has changed since the previous calculation. Otherwise they can be re-used.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.calculate_pump_wavepackets">
+<code class="descname">calculate_pump_wavepackets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.calculate_pump_wavepackets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.calculate_pump_wavepackets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the wavepackets that involve only the pump, and therefore
+do not need to be recalculated for different delay times</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.plot_pump_probe_spectra">
+<code class="descname">plot_pump_probe_spectra</code><span class="sig-paren">(</span><em>*, frequency_range=[-1000, 1000], subtract_DC=True, create_figure=True, color_range='auto', draw_colorbar=True, save_fig=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.plot_pump_probe_spectra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.plot_pump_probe_spectra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the transient absorption spectra with detection frequency on the
+y-axis and delay time on the x-axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frequency_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – sets the min (list[0]) and max (list[1]) detection frequency for y-axis</li>
+<li><strong>subtract_DC</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – if True subtract the DC component of the TA</li>
+<li><strong>color_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – sets the min (list[0]) and max (list[1]) value for the colorbar</li>
+<li><strong>draw_colorbar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – if True add a colorbar to the plot</li>
+<li><strong>save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – if True save the figure that is produced</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.set_pulse_shapes">
+<code class="descname">set_pulse_shapes</code><span class="sig-paren">(</span><em>pump_field</em>, <em>probe_field</em>, <em>*</em>, <em>plot_fields=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.set_pulse_shapes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.set_pulse_shapes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a list of 4 pulse amplitudes, given an input pump shape and probe
+shape. Assumes 4-wave mixing signals, and so 4 interactions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ultrafastultrafast.signals.TransientAbsorption.set_pulse_times">
+<code class="descname">set_pulse_times</code><span class="sig-paren">(</span><em>delay_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ultrafastultrafast/signals/TA_example.html#TransientAbsorption.set_pulse_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ultrafastultrafast.signals.TransientAbsorption.set_pulse_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a list of pulse times for the pump-probe calculation assuming
+that the lowest-order, 4-wave mixing signals will be calculated, and so 4
+interactions will be considered</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">ultrafastultrafast</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Peter A. Rose and Jacob J. Krich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
