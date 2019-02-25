@@ -19,11 +19,11 @@ matplotlib
 pyfftw  
 
 # How to Use
-See the Jupyter notebook docs/Example.ipynb for examples of how to use
+See the Jupyter notebook Example.ipynb for examples of how to use
 this code to generate perturbative wavepackets, and from there
 the desired nonlinear spectroscopic signal
 
-The folder doc/monomder_d0.4 includes the necessary files to simulate
+The folder example_folder includes the necessary files to simulate
 a two-level system coupled to a single harmonic mode of Huang-Rhys
 factor 0.4^2/2 = 0.08.
 
