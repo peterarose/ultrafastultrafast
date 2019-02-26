@@ -45,8 +45,8 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    python_requires='==3.6.3',
+    python_requires='>=3.5',
 
-    install_requires=['numpy','scipy','pyfftw'],
+    install_requires=['numpy','matplotlib','pyfftw'],
 
 )
