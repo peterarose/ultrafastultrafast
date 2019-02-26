@@ -106,7 +106,7 @@ and mu_boolean.npz.
         mu_pruned_dict = {'GSM_to_SEM':mu_GSM_to_SEM_pruned}
 
         if 'SEM_to_DEM' in self.mu.keys():
-            mu_SEM_to_DEM_boolean = self.calculate_boolean_mu(self.mu['SEM_to_DEM'],1,rel_tol=rel_tol)
+            mu_SEM_to_DEM_boolean = self.calculate_boolean_mu(self.mu['SEM_to_DEM'],rel_tol=rel_tol)
             mu_SEM_to_DEM_pruned = self.mu['SEM_to_DEM'] * mu_SEM_to_DEM_boolean[:,:,np.newaxis]
             mu_boolean_dict['SEM_to_DEM'] = mu_SEM_to_DEM_boolean
             mu_pruned_dict['SEM_to_DEM'] = mu_SEM_to_DEM_pruned
