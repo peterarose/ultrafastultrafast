@@ -16,16 +16,28 @@ this code does.
 # Dependencies
 numpy  
 matplotlib  
-pyfftw  
+pyfftw
+scipy
 
 # How to Use
-See the Jupyter notebook Example.ipynb for examples of how to use
+See the Jupyter notebook UF2_examples.ipynb for examples of how to use
 this code to generate perturbative wavepackets, and from there
 the desired nonlinear spectroscopic signal
 
+See the Jupyter notebook RKE_examples.ipynb for exmples of how to use
+the RK45-Euler method included with this code to generate
+perturbative wavepackets, and from there the desired nonlinear
+spectroscopic signal.  The API for both the UF2 algorithm and the
+RKE algorithm is the same.
+
 The folder example_folder includes the necessary files to simulate
 a two-level system coupled to a single harmonic mode of Huang-Rhys
-factor 0.4^2/2 = 0.08.
+factor 0.4^2/2 = 0.08. (UF2 only)
+
+The folder dimer_example includes the necessary parameters file,
+called simple_params.yaml, to run both the UF2 and RKE algorithms.
+Documentation describing how to edit and create simple_params.yaml
+files to simulate other vibronic systems will be added soon.
 
 # Simulating with your own system
 
@@ -51,6 +63,12 @@ k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
 - 'SEM_to_DEM' (optional): containing a 3d numpy array with indicies [i,j,k] of the dipole elements
 connecting the SEM eigenstates (index j) to the DEM eigenstates (index i). The thid index
 k = 0,1,2 corresonds to cartesian coordinates k = x,y,z
+
+Note: RKE is currently not compatible with systems other than those that can
+be described by the vibronic_eigenstates package included in this
+repository. That is not a fundamental limitation, but simply a limitation of
+the current implementation.  Eventually the code will be updated to make it
+compatible with your own Hamiltonians, just as UF2 is already.
 
 # Documentation
 To view documentation open the html file 'doc/build/html/index.html'
