@@ -32,7 +32,7 @@ RKE algorithm is the same.
 
 The folder example_folder includes the necessary files to simulate
 a two-level system coupled to a single harmonic mode of Huang-Rhys
-factor 0.4^2/2 = 0.08. (UF2 only)
+factor 0.4^2/2 = 0.08. (UF2 only - see Examples.ipynb)
 
 The folder dimer_example includes the necessary parameters file,
 called simple_params.yaml, to run both the UF2 and RKE algorithms.
@@ -70,5 +70,3 @@ repository. That is not a fundamental limitation, but simply a limitation of
 the current implementation.  Eventually the code will be updated to make it
 compatible with your own Hamiltonians, just as UF2 is already.
 
-# Documentation
-To view documentation open the html file 'doc/build/html/index.html'
