@@ -16,7 +16,7 @@ this code does.
 # Dependencies
 numpy  
 matplotlib  
-pyfftw
+pyfftw  
 scipy
 
 # How to Use
