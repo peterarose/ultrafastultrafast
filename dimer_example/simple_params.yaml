@@ -1,0 +1,14 @@
+site_energies: [0,0.75]
+site_couplings: [0.3307]
+
+vibrations:
+  - {'omega_g':1.0, 'displacement':0.2,'site_label':0,'reorganization':0}
+  - {'omega_g':1.000001, 'displacement':0.2,'site_label':1,'reorganization':0}
+
+dipoles:
+  - [1,0,0]
+  - [0,1,0]
+
+num_eigenvalues: 'full'
+eigenvalue_precision: 1.0E-1
+truncation_size: 5
