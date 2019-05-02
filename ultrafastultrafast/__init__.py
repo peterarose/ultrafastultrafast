@@ -1,3 +1,5 @@
 from ultrafastultrafast.core import Wavepackets
+from ultrafastultrafast.RK_core import RK_Wavepackets
 from ultrafastultrafast.dipole_pruning import DipolePruning
 import ultrafastultrafast.signals as signals
+import ultrafastultrafast.vibronic_eigenstates as vibronic_eigenstates

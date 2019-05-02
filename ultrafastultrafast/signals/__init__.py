@@ -2,3 +2,4 @@ from .TA_example import TransientAbsorption
 from .TA_isotropic_average_example import TransientAbsorptionIsotropicAverage
 from .TA_5th_order_example import TransientAbsorption5thOrder
 from .TA_5th_order_isotropic_average_example import TransientAbsorption5thOrderIsotropicAverage
+from .RK_TA_example import RK_TransientAbsorption
