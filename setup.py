@@ -47,6 +47,6 @@ setup(
 
     python_requires='>=3.5',
 
-    install_requires=['numpy','matplotlib','pyfftw','scipy>=1'],
+    install_requires=['numpy','matplotlib','pyfftw','scipy>=1','pyyaml'],
 
 )
