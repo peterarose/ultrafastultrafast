@@ -286,7 +286,7 @@ degenerate subspaces. If the hamiltonian is not hermitian, this will break
 the eigenvalues (since they are not expected to be orthogonal).
 """
         with open(yaml_file) as yamlstream:
-            params = yaml.load(yamlstream)
+            params = yaml.load(yamlstream,Loader=yaml.SafeLoader)
         try:
             auto_DEM = params['auto_DEM']
         except KeyError:

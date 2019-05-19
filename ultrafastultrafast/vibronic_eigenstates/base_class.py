@@ -10,7 +10,7 @@ class DataOrganizer:
 
     def load_params(self):
         with open(os.path.join(self.base_path,'params.yaml')) as yamlstream:
-            self.params = yaml.load(yamlstream)
+            self.params = yaml.load(yamlstream,Loader=yaml.SafeLoader)
 
     def get_closest_index_and_value(self,value,array):
         index = np.argmin(np.abs(array - value))

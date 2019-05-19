@@ -206,7 +206,7 @@ class EigenGenerator(PolymerVibrations,DataOrganizer):
         self.eigenvectors = [eigvec_archive[key] for key in self.manifolds]
 
         with open(os.path.join(self.base_path,'eigen_params.yaml'),'r') as yamlstream:
-            eigen_params = yaml.load(yamlstream)
+            eigen_params = yaml.load(yamlstream,Loader=yaml.SafeLoader)
             self.truncation_size = eigen_params['final truncation size']
             self.ground_ZPE = eigen_params['ground zero point energy']
             self.ground_to_excited_transition = eigen_params['ground to excited transition']

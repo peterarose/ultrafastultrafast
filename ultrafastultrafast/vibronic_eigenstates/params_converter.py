@@ -129,7 +129,7 @@ def convert(base_path,*,convert_type='simple'):
     simple_file_name = os.path.join(base_path,'simple_params.yaml')
     parameter_file_name = os.path.join(base_path,'params.yaml')
     with open(simple_file_name,'r') as yamlstream:
-        simple = yaml.load(yamlstream)
+        simple = yaml.load(yamlstream,Loader=yaml.SafeLoader)
     
     params = dict()
     params['dipoles'] = simple['dipoles']
