@@ -1,5 +1,7 @@
 #Standard python libraries
 import copy
+import os
+import time
 
 #Dependencies
 import numpy as np
@@ -20,6 +22,35 @@ wavepackets needed to calculate the frequency-resolved pump-probe spectrum """
         super().__init__(parameter_file_path, num_conv_points=num_conv_points,
                          initial_state=initial_state, dt=dt,
                          total_num_time_points = total_num_time_points)
+        self.trim_mu_impulsive()
+
+    def trim_mu_impulsive(self):
+        """Trims down dipole operator to the minimum number of states needed, given that 
+            the dipole operator has already been pruned (see ultrafastultrafast.DipolePruning).
+            This trimming is done based upon the initial state the wavefunction begins in.  
+            The initial state is usually the lowest energy ground state, unless thermal
+            averaging is to be performed"""
+
+        psi0_mask = self.psi0['bool_mask']
+        # doesn't matter if I do this with x, y or z
+        m10 = self.original_mu_GSM_to_SEM[:,:,0]
+        m21 = self.original_mu_SEM_to_DEM[:,:,0]
+        bool10 = self.original_mu_GSM_to_SEM_boolean
+        bool21 = self.original_mu_SEM_to_DEM_boolean
+        
+        dipole_matrix10, SEM_mask = self.mask_dipole_matrix(bool10,m10,psi0_mask)
+        dipole_matrix01, GSM_mask = self.mask_dipole_matrix(bool10.T,m10.T,SEM_mask)
+        dipole_matrix21, DEM_mask = self.mask_dipole_matrix(bool21,m21,SEM_mask)
+
+        masks = [GSM_mask,SEM_mask,DEM_mask]
+
+        self.psi0['bool_mask'] = self.psi0['bool_mask'][GSM_mask]
+
+        self.trim_mu(masks)
+
+        # This must be redone!
+        self.electric_field_mask()
+        self.set_U0()
 
     def set_pulse_times(self,delay_time):
         """Sets a list of pulse times for the pump-probe calculation assuming
@@ -188,7 +219,9 @@ field has changed since the previous calculation. Otherwise they can be re-used.
         self.delay_times = delay_times
 
         min_sig_decay_time = self.t[-1] - (delay_times[-1])
-        if min_sig_decay_time < 5/self.gamma:
+        if self.gamma == 0:
+            pass
+        elif min_sig_decay_time < self.gamma_res/self.gamma:
             if min_sig_decay_time < 0:
                 warnings.warn("""Time mesh is not long enough to support requested
                 number of delay time points""")
@@ -198,30 +231,68 @@ field has changed since the previous calculation. Otherwise they can be re-used.
                 Consider selecting larger gamma value or a longer time 
                 mesh""".format(np.exp(-min_sig_decay_time*self.gamma)))
 
+        t0 = time.time()
+
         self.set_pulse_times(0)
         self.calculate_pump_wavepackets()
+        t0_b = time.time()
         signal = np.zeros((self.w.size,delay_times.size))
+
+        t1 = time.time()
 
         for n in range(delay_times.size):
             signal[:,n] = self.calculate_pump_probe_spectrum(delay_times[n], recalculate_pump_wavepackets=False)
 
+        t2 = time.time()
+        self.time_to_calculate_no_pump = t2-t1
+        self.time_to_calculate = t2-t0
+        self.time_to_calculate_no_pump = t1 - t0_b
+
         self.signal_vs_delay_times = signal
+
+        N_k_GSM = self.psi2_ab['bool_mask'].sum()
+        N_k_SEM = self.psi1_a['bool_mask'].sum()
+        self.total_used_eigenvalues = {'N_k_GSM':N_k_GSM,'N_k_SEM':N_k_SEM}
+        if 'DEM' in self.manifolds:
+            self.total_used_eigenvalues['N_k_DEM'] = self.psi2_bc['bool_mask'].sum()
 
         return signal
 
     def save_pump_probe_spectra_vs_delay_time(self):
-        save_name = self.base_path + 'TA_spectra.npz'
-        np.savez(save_name,signal = self.signal_vs_delay_times, delay_times = self.delay_times, frequencies = self.w)
+        save_name = os.path.join(self.base_path,'TA_spectra.npz')
+        np.savez(save_name,signal = self.signal_vs_delay_times, delay_times = self.delay_times,
+                 frequencies = self.w,time_to_calculate = self.time_to_calculate,
+                 **self.total_used_eigenvalues)
 
     def load_pump_probe_spectra_vs_delay_time(self):
-        load_name = self.base_path + 'TA_spectra.npz'
+        load_name = os.path.join(self.base_path,'TA_spectra.npz')
         arch = np.load(load_name)
         self.signal_vs_delay_times = arch['signal']
         self.delay_times = arch['delay_times']
         self.w = arch['frequencies']
+        try:
+            self.time_to_calculate = arch['time_to_calculate']
+        except KeyError:
+            pass
 
+        try:
+            N_k_GSM = arch['N_k_GSM']
+            N_k_SEM = arch['N_k_SEM']
+            self.total_used_eigenvalues = {'N_k_GSM':N_k_GSM,'N_k_SEM':N_k_SEM}
+            if 'DEM' in self.manifolds:
+                self.total_used_eigenvalues['N_k_DEM'] = N_k_DEM = arch['N_k_DEM']
+
+        except KeyError:
+            pass
+
+    def subtract_DC(self,sig):
+        sig_fft = fft(sig,axis=1)
+        sig_fft[:,0] = 0
+        sig = np.real(ifft(sig_fft))
+        return sig
+        
     def plot_pump_probe_spectra(self,*,frequency_range=[-1000,1000], subtract_DC = True, create_figure=True,
-               color_range = 'auto',draw_colorbar = True,save_fig=True):
+                                color_range = 'auto',draw_colorbar = True,save_fig=True,return_signal=False):
         """Plots the transient absorption spectra with detection frequency on the
         y-axis and delay time on the x-axis.
 
@@ -253,7 +324,9 @@ field has changed since the previous calculation. Otherwise they can be re-used.
         plt.xlabel('Delay time ($\omega_0^{-1}$)',fontsize=16)
         plt.ylabel('Detection Frequency ($\omega_0$)',fontsize=16)
         if save_fig:
-            plt.savefig(self.base_path + 'TA_spectra')
+            plt.savefig(os.path.join(self.base_path,'TA_spectra'))
+        if return_signal:
+            return ww,tt,sig
 
     def plot2d_fft(self,*,delay_time_start = 1,create_figure=True,color_range = 'auto',subtract_DC=True,
                    draw_colorbar = True,frequency_range=[-1000,1000],normalize=False,phase=False,
