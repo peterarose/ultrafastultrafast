@@ -436,25 +436,28 @@ supported by the electric field.  We assume that the electric field has
 choice of dt and num_conv_points.  Otherwise we will inadvertently 
 alias transitions onto nonzero electric field amplitudes.
 """
-        eig0 = self.eigenvalues[0]
-        eig1 = self.eigenvalues[1]
-        diff10 = eig1[:,np.newaxis] - eig0[np.newaxis,:]
+        if self.efield_t.size == 1:
+            pass
+        else:
+            eig0 = self.eigenvalues[0]
+            eig1 = self.eigenvalues[1]
+            diff10 = eig1[:,np.newaxis] - eig0[np.newaxis,:]
 
-        # The only transitions allowed by the electric field shape are
-        inds_allowed10 = np.where((diff10 > self.efield_w[0]) & (diff10 < self.efield_w[-1]))
-        mask10 = np.zeros(diff10.shape,dtype='bool')
-        mask10[inds_allowed10] = 1
-        self.mu_GSM_to_SEM_boolean = self.original_mu_GSM_to_SEM_boolean * mask10
-        self.mu_GSM_to_SEM = self.original_mu_GSM_to_SEM * mask10[:,:,np.newaxis]
+            # The only transitions allowed by the electric field shape are
+            inds_allowed10 = np.where((diff10 > self.efield_w[0]) & (diff10 < self.efield_w[-1]))
+            mask10 = np.zeros(diff10.shape,dtype='bool')
+            mask10[inds_allowed10] = 1
+            self.mu_GSM_to_SEM_boolean = self.original_mu_GSM_to_SEM_boolean * mask10
+            self.mu_GSM_to_SEM = self.original_mu_GSM_to_SEM * mask10[:,:,np.newaxis]
 
-        if 'DEM' in self.manifolds:
-            eig2 = self.eigenvalues[2]
-            diff21 = eig2[:,np.newaxis] - eig1[np.newaxis,:]
-            inds_allowed21 = np.where((diff21 >= self.efield_w[0]) & (diff21 <= self.efield_w[-1]))
-            mask21 = np.zeros(diff21.shape,dtype='bool')
-            mask21[inds_allowed21] = 1
-            self.mu_SEM_to_DEM_boolean = self.original_mu_SEM_to_DEM_boolean * mask21
-            self.mu_SEM_to_DEM = self.original_mu_SEM_to_DEM * mask21[:,:,np.newaxis]
+            if 'DEM' in self.manifolds:
+                eig2 = self.eigenvalues[2]
+                diff21 = eig2[:,np.newaxis] - eig1[np.newaxis,:]
+                inds_allowed21 = np.where((diff21 >= self.efield_w[0]) & (diff21 <= self.efield_w[-1]))
+                mask21 = np.zeros(diff21.shape,dtype='bool')
+                mask21[inds_allowed21] = 1
+                self.mu_SEM_to_DEM_boolean = self.original_mu_SEM_to_DEM_boolean * mask21
+                self.mu_SEM_to_DEM = self.original_mu_SEM_to_DEM * mask21[:,:,np.newaxis]
 
     def mask_dipole_matrix(self,boolean_matrix,overlap_matrix,
                            starting_manifold_mask,*,next_manifold_mask = None):
@@ -507,6 +510,10 @@ alias transitions onto nonzero electric field amplitudes.
 """
         pulse_time = self.pulse_times[pulse_number]
         pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
+        if np.allclose(self.t[pulse_time_ind],pulse_time):
+            pass
+        else:
+            warnings.warn('Pulse time is not an integer multiple of dt, changing requested pulse time, {}, to the closest value of seft.t, {}'.format(pulse_time,self.t[pulse_time_ind]))
 
         pulse_start_ind = pulse_time_ind - self.size//2
         pulse_end_ind = pulse_time_ind + self.size//2 + self.size%2
@@ -523,15 +530,15 @@ alias transitions onto nonzero electric field amplitudes.
         # exp_factor_starting = self.unitary[starting_manifold_num][m_nonzero,t_slice]
         # psi_in *= exp_factor_starting
         
-        t0 = time.time()
+        
         boolean_matrix, overlap_matrix = self.dipole_matrix(starting_manifold_num,next_manifold_num,
                                                             pulse_number)
 
         overlap_matrix, n_nonzero = self.mask_dipole_matrix(boolean_matrix,overlap_matrix,m_nonzero,
                                                                 next_manifold_mask = new_manifold_mask)
-
+        t0 = time.time()
         psi = overlap_matrix.dot(psi_in)
-        
+                
         t1 = time.time()
         self.next_order_expectation_time += t1-t0
         
@@ -546,10 +553,10 @@ alias transitions onto nonzero electric field amplitudes.
 
         t0 = time.time()
 
-        if pulse_number == 'impulsive':
-            heavi = np.heaviside(t-pulse_time,0.5)[np.newaxis,:]
-            psi = psi[:,self.size//2].copy()
-            psi = psi[:,np.newaxis] * heavi
+        M = self.efield_t.size
+
+        if M == 1:
+            psi *= self.efields[pulse_number]
         else:
             if next_manifold_num > starting_manifold_num:
                 efield = self.efields[pulse_number]
@@ -827,16 +834,19 @@ frequency integrated."""
         if return_polarization:
             return P_of_t
 
-        if local_oscillator_number == 'impulsive':
-            efield = np.exp(1j*self.w*(pulse_time))
-        else:
-            pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
+        pulse_time_ind = np.argmin(np.abs(self.t - pulse_time))
+        efield = np.zeros(self.t.size,dtype='complex')
 
+        if self.efield_t.size == 1:
+            # Impulsive limit
+            efield[pulse_time_ind] = self.efields[local_oscillator_number]
+            efield = fftshift(ifft(ifftshift(efield)))*efield.size/np.sqrt(2*np.pi)
+        else:
             pulse_start_ind = pulse_time_ind - self.size//2
             pulse_end_ind = pulse_time_ind + self.size//2 + self.size%2
 
             t_slice = slice(pulse_start_ind, pulse_end_ind,None)
-            efield = np.zeros(self.t.size,dtype='complex')
+            
             efield[t_slice] = self.efields[local_oscillator_number]
             efield = fftshift(ifft(ifftshift(efield)))*self.t.size*(self.t[1]-self.t[0])/np.sqrt(2*np.pi)
 

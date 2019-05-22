@@ -65,44 +65,47 @@ shape. Assumes 4-wave mixing signals, and so 4 interactions
 """
         self.efields = [pump_field,pump_field,probe_field,probe_field]
 
-        pump_tail = np.max(np.abs([pump_field[0],pump_field[-1]]))
-        probe_tail = np.max(np.abs([probe_field[0],probe_field[-1]]))
+        if self.efield_t.size == 1:
+            pass
+        else:
+            pump_tail = np.max(np.abs([pump_field[0],pump_field[-1]]))
+            probe_tail = np.max(np.abs([probe_field[0],probe_field[-1]]))
 
-        if pump_field.size != self.efield_t.size:
-            warnings.warn('Pump must be evaluated on efield_t, the grid defined by dt and num_conv_points')
-        if probe_field.size != self.efield_t.size:
-            warnings.warn('Probe must be evaluated on efield_t, the grid defined by dt and num_conv_points')
+            if pump_field.size != self.efield_t.size:
+                warnings.warn('Pump must be evaluated on efield_t, the grid defined by dt and num_conv_points')
+            if probe_field.size != self.efield_t.size:
+                warnings.warn('Probe must be evaluated on efield_t, the grid defined by dt and num_conv_points')
 
-        if pump_tail > np.max(np.abs(pump_field))/100:
-            warnings.warn('Consider using larger num_conv_points, pump does not decay to less than 1% of maximum value in time domain')
-        if probe_tail > np.max(np.abs(probe_field))/100:
-            warnings.warn('Consider using larger num_conv_points, probe does not decay to less than 1% of maximum value in time domain')
-            
-        pump_fft = fftshift(fft(ifftshift(pump_field)))*self.dt
-        probe_fft = fftshift(fft(ifftshift(probe_field)))*self.dt
-        pump_fft_tail = np.max(np.abs([pump_fft[0],pump_fft[-1]]))
-        probe_fft_tail = np.max(np.abs([probe_fft[0],probe_fft[-1]]))
-        
-        if pump_fft_tail > np.max(np.abs(pump_fft))/100:
-            warnings.warn('''Consider using smaller value of dt, pump does not decay to less than 1% of maximum value in frequency domain''')
+            if pump_tail > np.max(np.abs(pump_field))/100:
+                warnings.warn('Consider using larger num_conv_points, pump does not decay to less than 1% of maximum value in time domain')
+            if probe_tail > np.max(np.abs(probe_field))/100:
+                warnings.warn('Consider using larger num_conv_points, probe does not decay to less than 1% of maximum value in time domain')
 
-        if probe_fft_tail > np.max(np.abs(probe_fft))/100:
-            warnings.warn('''Consider using smaller value of dt, probe does not decay to less than 1% of maximum value in frequency domain''')
+            pump_fft = fftshift(fft(ifftshift(pump_field)))*self.dt
+            probe_fft = fftshift(fft(ifftshift(probe_field)))*self.dt
+            pump_fft_tail = np.max(np.abs([pump_fft[0],pump_fft[-1]]))
+            probe_fft_tail = np.max(np.abs([probe_fft[0],probe_fft[-1]]))
 
-        if plot_fields:
-            fig, axes = plt.subplots(2,2)
-            l1,l2, = axes[0,0].plot(self.efield_t,np.real(pump_field),self.efield_t,np.imag(pump_field))
-            plt.legend([l1,l2],['Real','Imag'])
-            axes[0,1].plot(self.efield_w,np.real(pump_fft),self.efield_w,np.imag(pump_fft))
-            axes[1,0].plot(self.efield_t,np.real(probe_field),self.efield_t,np.imag(probe_field))
-            axes[1,1].plot(self.efield_w,np.real(probe_fft),self.efield_w,np.imag(probe_fft))
+            if pump_fft_tail > np.max(np.abs(pump_fft))/100:
+                warnings.warn('''Consider using smaller value of dt, pump does not decay to less than 1% of maximum value in frequency domain''')
 
-            axes[0,0].set_ylabel('Pump Amp')
-            axes[1,0].set_ylabel('Probe Amp')
-            axes[1,0].set_xlabel('Time')
-            axes[1,1].set_xlabel('Frequency')
+            if probe_fft_tail > np.max(np.abs(probe_fft))/100:
+                warnings.warn('''Consider using smaller value of dt, probe does not decay to less than 1% of maximum value in frequency domain''')
 
-            fig.suptitle('Check that pump and probe are well-resolved in time and frequency')
+            if plot_fields:
+                fig, axes = plt.subplots(2,2)
+                l1,l2, = axes[0,0].plot(self.efield_t,np.real(pump_field),self.efield_t,np.imag(pump_field))
+                plt.legend([l1,l2],['Real','Imag'])
+                axes[0,1].plot(self.efield_w,np.real(pump_fft),self.efield_w,np.imag(pump_fft))
+                axes[1,0].plot(self.efield_t,np.real(probe_field),self.efield_t,np.imag(probe_field))
+                axes[1,1].plot(self.efield_w,np.real(probe_fft),self.efield_w,np.imag(probe_fft))
+
+                axes[0,0].set_ylabel('Pump Amp')
+                axes[1,0].set_ylabel('Probe Amp')
+                axes[1,0].set_xlabel('Time')
+                axes[1,1].set_xlabel('Frequency')
+
+                fig.suptitle('Check that pump and probe are well-resolved in time and frequency')
             
         
 

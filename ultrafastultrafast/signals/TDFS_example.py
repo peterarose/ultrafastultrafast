@@ -85,8 +85,12 @@ wavepackets needed to calculate the frequency-resolved pump-probe spectrum """
             At present, if the different pulses have different center frequencies,
             we recommend you rotate away the average carrier frequency."""
         self.efields = efield_list
-        for field in self.efields:
-            self.check_efield_resolution(field,plot_fields = plot_fields)
+        if self.efield_t.size == 1:
+            # M = 1 is the impulsive limit
+            pass
+        else:
+            for field in self.efields:
+                self.check_efield_resolution(field,plot_fields = plot_fields)
 
     def check_efield_resolution(self,efield,*,plot_fields = False):
         efield_tail = np.max(np.abs([efield[0],efield[-1]]))
@@ -310,6 +314,6 @@ wavepackets needed to calculate the frequency-resolved pump-probe spectrum """
         plt.ylim([17000,21000])
         plt.colorbar()
         if savefig:
-            fig_name = os.path.join(self.base_path,part+'_'+signal + '_t_32_{}'.format(t32_time))
+            fig_name = os.path.join(self.base_path,part+'_'+signal + '_t_32_{}.png'.format(t32_time))
             plt.savefig(fig_name)
         plt.show()
