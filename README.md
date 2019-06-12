@@ -5,11 +5,18 @@ To try this package without installing or downloading the repository,
 follow this link to see an example jupyter notebook using Google's
 Colaboratory:  
 https://colab.research.google.com/github/peterarose/ultrafastultrafast/blob/master/UF2_Colab.ipynb
+(Note: Google's Coloaboratory gives a warning message about running Jupyter
+notebooks not authored by Google. When prompted by the warning, select
+"RUN ANYWAY", and then click "YES" when it asks you if you would like to
+reset all runtimes)
 
 You should be able to run the whole notebook in about 20 seconds.  The final
 plot produced at the bottom is Figure 6a from our paper (JCP:
 https://doi.org/10.1063/1.5094062), without the Gaussian lineshape function
-(only homogeneous broadening is included in this example).
+(only homogeneous broadening is included in this example).  There are
+currently also a few other minor discrepancies: color-scale has been
+rescaled, axes are in different units, and y-axis has the optical
+carrier frequency rotated away.
 
 ## How to install
 You can install UF2 without downloading the source code by running  
