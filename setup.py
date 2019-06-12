@@ -33,12 +33,13 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
 
-        'Intended Audience :: Researchers',
-        'Topic :: Nonlinear Optical Spectroscopy :: Wavepackets',
+        'Intended Audience :: Science/Research',
+        
+        'Topic :: Scientific/Engineering :: Physics',
         
         'License :: OSI Approved :: MIT License',
 
-        'Programming Language :: Python :: 3.6.3',
+        'Programming Language :: Python :: 3 :: Only',
     ],
 
     keywords='nonlinear optical spectroscopy',
