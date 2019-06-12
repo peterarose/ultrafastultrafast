@@ -1,28 +1,41 @@
 # ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
 
-# How to install
-In this directory, run either  
+## How to install
+You can install UF2 without downloading the source code by running  
+pip install ultrafastultrafast  
+
+(Note that UF2 is only written for python 3, so you may need to run
+pip3 install ultrafastultrafast if pip points to python 2 on your machine)  
+
+If you would like to install from the source code, you can clone this
+repository, navigate the repository directory, and run either  
 python setup.py install  
 or
 pip install .
 
 Once installed, you should be able to use  
 import ultrafastultrafast as uf2  
-Note: you should not need to install this code in order to run the Jupyter
-notebook Examples.ipynb. This notebook can be used to get an idea of what
-this code does.
+Note: you should not need to install this code in order to run any of the
+Jupyter notebooks included with this repository. This notebook can be used to
+get an idea of what this code does.
 
-# Dependencies
+## Dependencies
 numpy  
 matplotlib  
 pyfftw  
-scipy
+scipy  
+pyyaml
 
-# How to Use
+## How to Use
+To take UF2 for a test run without cloning this repository or installing
+it on your system, you can click on UF2_Colab.ipynb on the github page, and
+then click on the link "Open in Colab" at the top of the document.  You
+should be able to run the entire Jupyter notebook in about 20 seconds.  It produces the isotropically averaged TA spectra shown in Fig 6a of our paper, without the Gaussian linewidth
+
 See the Jupyter notebook UF2_examples.ipynb for examples of how to use
 this code to generate perturbative wavepackets, and from there
-the desired nonlinear spectroscopic signal
+the desired nonlinear spectroscopic signal.
 
 See the Jupyter notebook RKE_examples.ipynb for exmples of how to use
 the RK45-Euler method included with this code to generate
