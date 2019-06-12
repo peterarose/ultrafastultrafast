@@ -10,22 +10,21 @@ pip3 install ultrafastultrafast if pip points to python 2 on your machine)
 
 If you would like to install from the source code, you can clone this
 repository, navigate the repository directory, and run either  
-In this directory, run either  
 python setup.py install  
 or
 pip install .
 
 Once installed, you should be able to use  
 import ultrafastultrafast as uf2  
-Note: you should not need to install this code in order to run the Jupyter
-notebook Examples.ipynb. This notebook can be used to get an idea of what
-this code does.
+Note: you should not need to install this code in order to run any of the
+Jupyter notebooks included with this repository. This notebook can be used to
+get an idea of what this code does.
 
 ## Dependencies
 numpy  
 matplotlib  
 pyfftw  
-scipy
+scipy  
 pyyaml
 
 ## How to Use
