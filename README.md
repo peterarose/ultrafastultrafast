@@ -1,8 +1,12 @@
 # ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
+
 To try this package without installing or downloading the repository,
-follow this link to see an example using Google's Colaboratory:
+follow this link to see an example jupyter notebook using Google's
+Colaboratory:  
 https://colab.research.google.com/github/peterarose/ultrafastultrafast/blob/master/UF2_Colab.ipynb
+
+You should be able to run the whole notebook in about 20 seconds.
 
 ## How to install
 You can install UF2 without downloading the source code by running  
@@ -32,9 +36,12 @@ pyyaml
 
 ## How to Use
 To take UF2 for a test run without cloning this repository or installing
-it on your system, you can click on UF2_Colab.ipynb on the github page, and
-then click on the link "Open in Colab" at the top of the document.  You
-should be able to run the entire Jupyter notebook in about 20 seconds.  It produces the isotropically averaged TA spectra shown in Fig 6a of our paper, without the Gaussian linewidth
+it on your system, you can follow the above link to Google Colaboraty, or
+click on UF2_Colab.ipynb on the github page, and then click on the link
+"Open in Colab" at the top of the document.  You should be able to run
+the entire Jupyter notebook in about 20 seconds.  It produces the
+isotropically averaged TA spectra shown in Fig 6a of our paper, without
+the Gaussian linewidth
 
 See the Jupyter notebook UF2_examples.ipynb for examples of how to use
 this code to generate perturbative wavepackets, and from there
