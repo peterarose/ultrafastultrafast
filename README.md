@@ -1,5 +1,8 @@
 # ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
+To try this package without installing or downloading the repository,
+follow this link to see an example using Google's Colaboratory:
+https://colab.research.google.com/github/peterarose/ultrafastultrafast/blob/master/UF2_Colab.ipynb
 
 ## How to install
 You can install UF2 without downloading the source code by running  
