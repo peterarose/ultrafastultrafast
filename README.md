@@ -6,7 +6,10 @@ follow this link to see an example jupyter notebook using Google's
 Colaboratory:  
 https://colab.research.google.com/github/peterarose/ultrafastultrafast/blob/master/UF2_Colab.ipynb
 
-You should be able to run the whole notebook in about 20 seconds.
+You should be able to run the whole notebook in about 20 seconds.  The final
+plot produced at the bottom is Figure 6a from our paper (JCP:
+https://doi.org/10.1063/1.5094062), without the Gaussian lineshape function
+(only homogeneous broadening is included in this example).
 
 ## How to install
 You can install UF2 without downloading the source code by running  
