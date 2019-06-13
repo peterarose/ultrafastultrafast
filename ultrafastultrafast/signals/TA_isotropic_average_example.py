@@ -50,6 +50,15 @@ class TransientAbsorptionIsotropicAverage(object):
         # Working directory
         self.base_path = self.TA.base_path
 
+    def set_homogeneous_linewidth(self,*args,**kwargs):
+        self.TA.set_homogeneous_linewidth(*args,**kwargs)
+
+    def set_inhomogeneous_linewidth(self,*args,**kwargs):
+        self.TA.set_inhomogeneous_linewidth(*args,**kwargs)
+
+    def recenter(self,*args,**kwargs):
+        self.TA.recenter(*args,**kwargs)
+
     def set_pulse_shapes(self,*args,**kwargs):
         # Pass pulse shapes on to the self.TA object
         self.TA.set_pulse_shapes(*args,**kwargs)
@@ -94,19 +103,33 @@ class TransientAbsorptionIsotropicAverage(object):
         self.signal_vs_delay_times = signal
         self.delay_times = delay_times
         self.w = self.TA.w
+        
+        # Center frequency of pulses in the RWA
+        self.center = self.TA.center
 
         return signal
 
-    def save_pump_probe_spectra_vs_delay_time(self):
-        save_name = self.base_path + 'TA_spectra_iso_ave.npz'
-        np.savez(save_name,signal = self.signal_vs_delay_times, delay_times = self.delay_times, frequencies = self.w)
+    def save(self,**kwargs):
+        self.save_pump_probe_spectra_vs_delay_time(**kwargs)
 
+    def save_pump_probe_spectra_vs_delay_time(self,*,save_file_name='default'):
+        if save_file_name == 'default':
+            save_name = os.path.join(self.base_path,'TA_spectra_iso_ave.npz')
+        else:
+            save_name = os.path.join(self.base_path,save_file_name)
+        np.savez(save_name,signal = self.signal_vs_delay_times, delay_times = self.delay_times, frequencies = self.w, pulse_center = self.center)
+        
     def load_pump_probe_spectra_vs_delay_time(self):
         load_name = self.base_path + 'TA_spectra_iso_ave.npz'
         arch = np.load(load_name)
         self.signal_vs_delay_times = arch['signal']
         self.delay_times = arch['delay_times']
         self.w = arch['frequencies']
+        try:
+            self.center = arch['pulse_center']
+        except KeyError:
+            warnings.warn('Pulse center was not saved in archive, setting center = 0')
+            self.center = 0
 
     def plot_pump_probe_spectra(self,*,frequency_range=[-1000,1000], subtract_DC = True, create_figure=True,
                color_range = 'auto',draw_colorbar = True,save_fig=True):
