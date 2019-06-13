@@ -137,6 +137,7 @@ class Wavepackets(HeavisideConvolve):
         self.undersample_factor = 1
 
         self.set_homogeneous_linewidth(0.05)
+        self.set_inhomogeneous_linewidth(0)
 
         self.load_eigenvalues()
 
@@ -202,6 +203,9 @@ class Wavepackets(HeavisideConvolve):
 
     def set_homogeneous_linewidth(self,gamma):
         self.gamma = gamma
+
+    def set_inhomogeneous_linewidth(self,sigma):
+        self.sigma_I = sigma
 
     def get_closest_index_and_value(self,value,array):
         """Given an array and a desired value, finds the closest actual value
@@ -831,6 +835,9 @@ frequency integrated."""
         if self.gamma != 0:
             exp_factor = np.exp(-self.gamma * np.abs(t-pulse_time))
             P_of_t *= exp_factor
+        if self.sigma_I != 0:
+            inhomogeneous = np.exp(-(t-pulse_time)**2*self.sigma_I**2/2)
+            P_of_t *= inhomogeneous
         if return_polarization:
             return P_of_t
 
