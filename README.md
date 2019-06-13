@@ -13,11 +13,7 @@ reset all runtimes)
 
 You should be able to run the whole notebook in about 20 seconds.  The final
 plot produced at the bottom is Figure 6a from our paper (JCP:
-https://doi.org/10.1063/1.5094062), without the Gaussian lineshape function
-(only homogeneous broadening is included in this example).  There are
-currently also a few other minor discrepancies: color-scale has been
-rescaled, axes are in different units, and y-axis has the optical
-carrier frequency rotated away.
+https://doi.org/10.1063/1.5094062).
 
 ## How to install
 You can install UF2 without downloading the source code by running  
