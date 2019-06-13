@@ -1,6 +1,7 @@
 # ultrafastultrafast (UF2)
 Code for simulating nonlinear optical spectroscopies of closed systems
 
+## Taking UF2 for a test drive
 To try this package without installing or downloading the repository,
 follow this link to see an example jupyter notebook using Google's
 Colaboratory:  
