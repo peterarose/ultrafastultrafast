@@ -13,7 +13,10 @@ reset all runtimes)
 
 You should be able to run the whole notebook in about 20 seconds.  The final
 plot produced at the bottom is Figure 6a from our paper (JCP:
-https://doi.org/10.1063/1.5094062).
+https://doi.org/10.1063/1.5094062).  To run the whole notebook, find the
+dropdown menu "Runtime", click on it, and then select "Run All".
+Alternatively you can run each cell one at a time by typing Shift+Enter
+inside each cell.
 
 ## How to install
 You can install UF2 without downloading the source code by running  
