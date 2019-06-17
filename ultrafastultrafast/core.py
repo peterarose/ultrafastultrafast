@@ -165,9 +165,8 @@ class Wavepackets(HeavisideConvolve):
         # f = fftshift(fftfreq(self.t.size-self.t.size%2,d=self.dt))
         f = fftshift(fftfreq(self.t.size,d=self.dt))
         self.w = 2*np.pi*f
-        
-        # Initialize unperturbed wavefunction
-        self.set_psi0(initial_state)
+
+        self.initial_ground_state_index = initial_state
 
         # Define the unitary operator for each manifold in the RWA given the rotating frequency center
         self.recenter(new_center = center)
@@ -182,7 +181,7 @@ class Wavepackets(HeavisideConvolve):
         Args:
             initial_state (int): index for initial eigenstate in GSM
 """
-        psi0 = np.ones((1,self.t.size),dtype=complex)
+        psi0 = np.ones((1,self.t.size),dtype=complex)*self.unitary[0][initial_state,:]
         bool_mask = np.zeros(self.eigenvalues[0].size,dtype='bool')
         bool_mask[initial_state] = True
         
@@ -318,6 +317,8 @@ efficient from the perspective of the code  """
         self.center = new_center
         self.electric_field_mask()
         self.set_U0()
+        # Initialize unperturbed wavefunction
+        self.set_psi0(self.initial_ground_state_index)
 
     def extend_wavefunction(self,psi_dict,pulse_start_ind,pulse_end_ind,*,check_flag = False,
                             gamma_end_ind = None):
