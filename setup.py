@@ -16,7 +16,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='ultrafastultrafast',
 
-    version='0.2.1',
+    version='0.2.2',
 
     description='Package for simulating nonlinear optical spectra',
 
